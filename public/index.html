@@ -6,7 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-SZ0XT7E1JT"></script>
-  <script src="/js/ga.js"></script>
+  <script>
+    // Google Analytics
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-SZ0XT7E1JT');
+  </script>
   <title>プラットフォームサービス比較</title>
   <script crossorigin src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
@@ -77,6 +83,15 @@
       font-size: 1rem;
       border-radius: 12px;
       width: 100%;
+      transition: all 0.3s ease;
+    }
+    
+    .search-input:focus {
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .search-input::placeholder {
+      color: #9ca3af;
     }
     
     .filter-button {
@@ -130,6 +145,35 @@
     .scroll-to-top:hover {
       transform: translateY(-2px);
       box-shadow: 0 15px 40px rgba(59, 130, 246, 0.4);
+    }
+    
+    .animate-fadeIn {
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .loading-spinner {
+      border: 2px solid #f3f4f6;
+      border-top: 2px solid #3b82f6;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
     
     .header-title {
@@ -267,7 +311,7 @@
       };
     `;
 
-    const { useState, useMemo, useEffect, useCallback } = React;
+    const { useState, useMemo, useEffect, useCallback, useRef } = React;
 
     // サービスデータ
     const data = {
@@ -307,36 +351,82 @@
       }, [value, delay]);
       return debouncedValue;
     };
-    const SearchBar = ({ searchQuery, onSearchChange }) => (
-      <div className="search-container">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="🔍 タイトル、説明文、タグで検索..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="search-input"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => onSearchChange('')}
-              className="absolute inset-y-0 right-0 flex items-center pr-6 text-gray-400 hover:text-gray-600"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+    const SearchBar = ({ searchQuery, onSearchChange }) => {
+      const [suggestions, setSuggestions] = useState([]);
+      const [showSuggestions, setShowSuggestions] = useState(false);
+      const inputRef = useRef(null);
+      
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          setShowSuggestions(false);
+          if (inputRef.current) {
+            inputRef.current.blur();
+          }
+        }
+        if (e.key === 'Enter') {
+          if (inputRef.current) {
+            inputRef.current.blur();
+          }
+        }
+      };
+      
+      const handleClear = () => {
+        onSearchChange('');
+        setShowSuggestions(false);
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      };
+      
+      return (
+        <div className="search-container">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-6 pointer-events-none">
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-            </button>
-          )}
+            </div>
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="サービス名、説明文、タグで検索..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="search-input pl-12"
+              autoComplete="off"
+            />
+            {searchQuery && (
+              <button
+                onClick={handleClear}
+                className="absolute inset-y-0 right-0 flex items-center pr-6 text-gray-400 hover:text-gray-600 transition-colors"
+                title="検索をクリア"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+          <div className="flex items-center justify-between mt-3 text-sm text-gray-500">
+            <span>💡 複数キーワードでの絞り込み検索が可能です</span>
+            {searchQuery && (
+              <span className="text-blue-600 font-medium">
+                「{searchQuery}」で検索中
+              </span>
+            )}
+          </div>
         </div>
-      </div>
-    );
+      );
+    };
 
-    const CategoryButton = ({ category, active, count, onClick, children }) => (
+    const CategoryButton = ({ category, active, count, onClick, children, description }) => (
       <button
         onClick={() => onClick(category)}
         className={`filter-button whitespace-nowrap ${active ? 'active' : ''}`}
+        title={description}
       >
-        {children} <span className={`ml-2 px-2 py-1 rounded-full text-xs font-bold count-badge ${active ? 'bg-white bg-opacity-25 text-white' : 'bg-gray-100 text-gray-600'}`}>({count})</span>
+        {children} <span className={`ml-2 px-2 py-1 rounded-full text-xs font-bold count-badge ${active ? 'bg-white bg-opacity-25 text-white' : 'bg-gray-100 text-gray-600'}`}>{count}</span>
       </button>
     );
 
@@ -356,11 +446,16 @@
     );
 
     const ServiceCard = ({ service }) => {
+      const [isExpanded, setIsExpanded] = useState(false);
       const imgUrl = service.details[service.platforms[0]].icon;
 
       const handleGoogleSearch = () => {
         const searchQuery = encodeURIComponent(service.title);
         window.open(`https://www.google.com/search?q=${searchQuery}`, '_blank');
+      };
+
+      const toggleExpanded = () => {
+        setIsExpanded(!isExpanded);
       };
 
       return (
@@ -383,48 +478,59 @@
                     <i className="fa-solid fa-magnifying-glass text-sm"></i>
                   </button>
                 </h3>
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap mb-3">
                   {service.platforms.map(platform => (
                     <PlatformBadge key={platform} platform={platform} />
                   ))}
                 </div>
-              </div>
-              <div className="text-right">
-                <span className="inline-block px-3 py-1 bg-gradient-to-r from-blue-50 to-purple-50 text-gray-700 text-sm font-medium rounded-full">
-                  {service.count}プラットフォーム
-                </span>
+                <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <span className="flex items-center gap-1">
+                    <i className="fa-solid fa-chart-bar"></i>
+                    {service.count}プラットフォーム対応
+                  </span>
+                  <button
+                    onClick={toggleExpanded}
+                    className="flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
+                  >
+                    <i className={`fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
+                    {isExpanded ? '詳細を閉じる' : '詳細を見る'}
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div className="space-y-4">
-              {service.platforms.map(platform => (
-                <div key={platform} className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
-                  <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                    <span>{platform}</span>
-                    {service.details[platform].link && (
-                      <a
-                        href={service.details[platform].link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-1 text-blue-500 hover:text-blue-700 transition-colors"
-                      >
-                        <i className="fa-solid fa-up-right-from-square text-sm"></i>
-                      </a>
+            {isExpanded && (
+              <div className="space-y-4 animate-fadeIn">
+                {service.platforms.map(platform => (
+                  <div key={platform} className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
+                    <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                      <span>{platform}</span>
+                      {service.details[platform].link && (
+                        <a
+                          href={service.details[platform].link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1 text-blue-500 hover:text-blue-700 transition-colors"
+                          title="公式ページを開く"
+                        >
+                          <i className="fa-solid fa-up-right-from-square text-sm"></i>
+                        </a>
+                      )}
+                    </h4>
+                    <p className="text-sm text-gray-600 mb-3 leading-relaxed" translate="yes">
+                      {service.details[platform].description}
+                    </p>
+                    {service.details[platform].tag && (
+                      <div className="flex items-center gap-2">
+                        <span className="px-3 py-1 bg-white text-gray-700 text-xs font-medium rounded-full shadow-sm">
+                          🏷️ {service.details[platform].tag}
+                        </span>
+                      </div>
                     )}
-                  </h4>
-                  <p className="text-sm text-gray-600 mb-3 leading-relaxed" translate="yes">
-                    {service.details[platform].description}
-                  </p>
-                  {service.details[platform].tag && (
-                    <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 bg-white text-gray-700 text-xs font-medium rounded-full shadow-sm">
-                        🏷️ {service.details[platform].tag}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       );
@@ -484,11 +590,13 @@
     };
 
     const App = () => {
-      const [selectedCategory, setSelectedCategory] = useState('all');
+      const [selectedCategory, setSelectedCategory] = useState('view-all');
       const [selectedPlatform, setSelectedPlatform] = useState('all');
-      const [searchInput, setSearchInput] = useState('');  // 入力用の状態
+      const [searchInput, setSearchInput] = useState('');
       const [filteredServices, setFilteredServices] = useState([]);
+      const [isLoading, setIsLoading] = useState(false);
       const [counts, setCounts] = useState({
+        'view-all': 0,
         all: 0,
         multiple: 0,
         unique: 0,
@@ -540,12 +648,19 @@
 
       // 検索処理のデバウンスを適用
       useEffect(() => {
+        setIsLoading(true);
         worker.postMessage({
           services: allServices,
           searchQuery: debouncedSearchQuery,
           platformFilter: selectedPlatform,
           categoryFilter: selectedCategory
         });
+        
+        const timer = setTimeout(() => {
+          setIsLoading(false);
+        }, 100);
+        
+        return () => clearTimeout(timer);
       }, [debouncedSearchQuery, selectedPlatform, selectedCategory, allServices]);
 
       return (
@@ -570,65 +685,91 @@
 
             {/* カテゴリーフィルター */}
             <div className="mb-8">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">📊 カテゴリー別フィルター</h3>
+                <p className="text-sm text-gray-500">プラットフォーム対応状況で絞り込み</p>
+              </div>
               <div className="flex justify-center gap-4 overflow-x-auto pb-2">
                 <CategoryButton
                   category="view-all"
                   active={selectedCategory === 'view-all'}
                   count={counts['view-all']}
                   onClick={setSelectedCategory}
+                  description="すべてのサービス"
                 >
-                  すべて
+                  🌟 すべて
                 </CategoryButton>
                 <CategoryButton
                   category="all"
                   active={selectedCategory === 'all'}
                   count={counts.all}
                   onClick={setSelectedCategory}
+                  description="5つすべてのプラットフォームで利用可能"
                 >
-                  全プラットフォーム共通
+                  🎯 全プラットフォーム共通
                 </CategoryButton>
                 <CategoryButton
                   category="multiple"
                   active={selectedCategory === 'multiple'}
                   count={counts.multiple}
                   onClick={setSelectedCategory}
+                  description="2-4つのプラットフォームで利用可能"
                 >
-                  複数プラットフォーム
+                  🔗 複数プラットフォーム
                 </CategoryButton>
                 <CategoryButton
                   category="unique"
                   active={selectedCategory === 'unique'}
                   count={counts.unique}
                   onClick={setSelectedCategory}
+                  description="特定のプラットフォーム限定"
                 >
-                  ユニーク
+                  💎 ユニーク
                 </CategoryButton>
               </div>
             </div>
 
             {/* プラットフォームフィルター */}
             <div className="mb-8">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">🚀 プラットフォーム別フィルター</h3>
+                <p className="text-sm text-gray-500">特定のプラットフォームのサービスのみ表示</p>
+              </div>
               <div className="flex flex-wrap gap-3 justify-center">
                 <PlatformButton
-                  platform="all"
+                  platform="🌐 all"
                   active={selectedPlatform === 'all'}
                   count={counts.totalUniqueServices}
                   onClick={() => setSelectedPlatform('all')}
                 />
-                {Object.keys(data).map(platform => (
-                  <PlatformButton
-                    key={platform}
-                    platform={platform}
-                    active={selectedPlatform === platform}
-                    count={counts.platforms[platform] || 0}
-                    onClick={() => setSelectedPlatform(platform)}
-                  />
-                ))}
+                {Object.keys(data).map(platform => {
+                  const platformIcons = {
+                    'zapier': '⚡',
+                    'IFTTT': '🔗',
+                    'PowerAutomate': '🔄',
+                    'n8n': '🛠️',
+                    'make': '🎯',
+                    'yoom': '💫'
+                  };
+                  return (
+                    <PlatformButton
+                      key={platform}
+                      platform={`${platformIcons[platform] || '📱'} ${platform}`}
+                      active={selectedPlatform === platform}
+                      count={counts.platforms[platform] || 0}
+                      onClick={() => setSelectedPlatform(platform)}
+                    />
+                  );
+                })}
               </div>
             </div>
 
-            {filteredServices.length > 0 && (
-              <div className="w-full flex justify-end mb-4">
+            {(filteredServices.length > 0 || isLoading) && (
+              <div className="w-full flex justify-between items-center mb-4">
+                <div className="text-sm text-gray-600 flex items-center gap-2">
+                  {isLoading && <div className="loading-spinner"></div>}
+                  {isLoading ? '検索中...' : `${filteredServices.length} 件の結果`}
+                </div>
                 <div className="results-count text-sm">
                   📊 {filteredServices.length} 件{filteredServices.length > 2000 ? "中 2000件表示" : ""}
                 </div>
