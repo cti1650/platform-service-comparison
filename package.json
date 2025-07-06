@@ -1,0 +1,23 @@
+{
+  "name": "platform-service-comparison",
+  "version": "1.0.0",
+  "description": "Platform service comparison tool",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Static site - no build needed'",
+    "start": "vercel --prod"
+  },
+  "keywords": [
+    "platform",
+    "service",
+    "comparison",
+    "react",
+    "static"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "vercel": "^34.0.0"
+  }
+}
