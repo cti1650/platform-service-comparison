@@ -237,7 +237,7 @@
         });
       };
       self.onmessage = function(e) {
-        const { services, searchQuery, platformFilter, categoryFilter } = e.data;
+        const { services, searchQuery, platformFilter, categoryFilter, searchMode } = e.data;
         
         const filteredServices = services.filter(service => {
           // 1. カテゴリーフィルター（優先度1）
@@ -258,11 +258,18 @@
           // 3. 検索クエリフィルター（優先度3）
           if (searchQuery) {
             const query = searchQuery.toLowerCase();
-            return service.platforms.some(platform => {
-              const details = service.details[platform];
-              const targetText = [details.title, details.description, details.tag].filter(Boolean).join('\\n');
-              return hasSearchQueryKeyword(targetText, query);
-            }) || hasSearchQueryKeyword(service.title, query);
+            
+            if (searchMode === 'title-only') {
+              // タイトルのみ検索モード
+              return hasSearchQueryKeyword(service.title, query);
+            } else {
+              // 全体検索モード（デフォルト）
+              return service.platforms.some(platform => {
+                const details = service.details[platform];
+                const targetText = [details.title, details.description, details.tag].filter(Boolean).join('\\n');
+                return hasSearchQueryKeyword(targetText, query);
+              }) || hasSearchQueryKeyword(service.title, query);
+            }
           }
           
           return true;
@@ -346,7 +353,7 @@
       }, [value, delay]);
       return debouncedValue;
     };
-    const SearchBar = ({ searchQuery, onSearchChange }) => {
+    const SearchBar = ({ searchQuery, onSearchChange, searchMode, onSearchModeChange }) => {
       const [suggestions, setSuggestions] = useState([]);
       const [showSuggestions, setShowSuggestions] = useState(false);
       const inputRef = useRef(null);
@@ -384,7 +391,7 @@
             <input
               ref={inputRef}
               type="text"
-              placeholder="サービス名、説明文、タグで検索..."
+              placeholder={searchMode === 'title-only' ? 'サービス名で検索...' : 'サービス名、説明文、タグで検索...'}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -403,11 +410,37 @@
               </button>
             )}
           </div>
-          <div className="flex items-center justify-between mt-3 text-sm text-gray-500">
-            <span>💡 複数キーワードでの絞り込み検索が可能です</span>
+          <div className="flex items-center justify-between mt-3 text-sm">
+            <div className="flex items-center gap-4">
+              <span className="text-gray-500">💡 複数キーワードでの絞り込み検索が可能です</span>
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-1 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="searchMode"
+                    value="all"
+                    checked={searchMode === 'all'}
+                    onChange={(e) => onSearchModeChange(e.target.value)}
+                    className="text-blue-600"
+                  />
+                  <span className="text-gray-600 text-xs">全体検索</span>
+                </label>
+                <label className="flex items-center gap-1 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="searchMode"
+                    value="title-only"
+                    checked={searchMode === 'title-only'}
+                    onChange={(e) => onSearchModeChange(e.target.value)}
+                    className="text-blue-600"
+                  />
+                  <span className="text-gray-600 text-xs">タイトルのみ</span>
+                </label>
+              </div>
+            </div>
             {searchQuery && (
               <span className="text-blue-600 font-medium">
-                「{searchQuery}」で検索中
+                「{searchQuery}」で{searchMode === 'title-only' ? 'タイトル' : '全体'}検索中
               </span>
             )}
           </div>
@@ -608,6 +641,7 @@
       const [selectedCategory, setSelectedCategory] = useState('view-all');
       const [selectedPlatform, setSelectedPlatform] = useState('all');
       const [searchInput, setSearchInput] = useState('');
+      const [searchMode, setSearchMode] = useState('all');
       const [filteredServices, setFilteredServices] = useState([]);
       const [isLoading, setIsLoading] = useState(false);
       const [counts, setCounts] = useState({
@@ -668,7 +702,8 @@
           services: allServices,
           searchQuery: debouncedSearchQuery,
           platformFilter: selectedPlatform,
-          categoryFilter: selectedCategory
+          categoryFilter: selectedCategory,
+          searchMode: searchMode
         });
         
         const timer = setTimeout(() => {
@@ -676,7 +711,7 @@
         }, 100);
         
         return () => clearTimeout(timer);
-      }, [debouncedSearchQuery, selectedPlatform, selectedCategory, allServices]);
+      }, [debouncedSearchQuery, selectedPlatform, selectedCategory, searchMode, allServices]);
 
       return (
         <div className="min-h-screen" translate="no">
@@ -695,6 +730,8 @@
               <SearchBar
                 searchQuery={searchInput}
                 onSearchChange={setSearchInput}
+                searchMode={searchMode}
+                onSearchModeChange={setSearchMode}
               />
             </div>
 
