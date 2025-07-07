@@ -285,8 +285,8 @@
           totalUniqueServices: 0
         };
         
-        // まずカテゴリーフィルターとプラットフォームフィルターのみを適用した結果で件数を計算
-        const countedServices = services.filter(service => {
+        // カテゴリーフィルターを適用してカテゴリ別件数を計算
+        const categoryFilteredServices = services.filter(service => {
           // プラットフォームフィルターのみを適用
           if (platformFilter && platformFilter !== 'all') {
             if (!service.platforms.includes(platformFilter)) return false;
@@ -294,7 +294,7 @@
           return true;
         });
 
-        countedServices.forEach(service => {
+        categoryFilteredServices.forEach(service => {
           const platformCount = service.platforms.length;
           const totalPlatforms = 7;
           
@@ -304,15 +304,31 @@
           if (platformCount === totalPlatforms) counts.all++;
           else if (platformCount === 1) counts.unique++;
           else counts.multiple++;
-          
+        });
+
+        // プラットフォーム別件数を計算（カテゴリーフィルター適用後）
+        const platformCountServices = services.filter(service => {
+          // カテゴリーフィルターを適用
+          if (categoryFilter !== 'view-all') {
+            const platformCount = service.platforms.length;
+            const totalPlatforms = 7;
+            
+            if (categoryFilter === 'all' && platformCount !== totalPlatforms) return false;
+            if (categoryFilter === 'multiple' && (platformCount === 1 || platformCount === totalPlatforms)) return false;
+            if (categoryFilter === 'unique' && platformCount !== 1) return false;
+          }
+          return true;
+        });
+
+        platformCountServices.forEach(service => {
           // プラットフォーム別カウント
           service.platforms.forEach(platform => {
             counts.platforms[platform] = (counts.platforms[platform] || 0) + 1;
           });
         });
 
-        // 重複を除いた総サービス数を計算
-        counts.totalUniqueServices = countedServices.length;
+        // 重複を除いた総サービス数を計算（カテゴリーフィルター適用後）
+        counts.totalUniqueServices = platformCountServices.length;
         
         self.postMessage({
           services: filteredServices,
