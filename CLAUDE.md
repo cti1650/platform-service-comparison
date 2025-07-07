@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a static web application that compares services across multiple automation platforms (Zapier, IFTTT, Power Automate, n8n, Make, Yoom). The app provides search functionality and filtering capabilities to help users find and compare services across different platforms.
+This is a static web application for comparing integration services and connectors across major iPaaS (Integration Platform as a Service) platforms: Zapier, IFTTT, Power Automate, n8n, Make, Yoom, and Dify. The app provides cross-platform search functionality and filtering capabilities to help users find and compare integration services across different iPaaS platforms.
 
 ## Development Commands
 
@@ -51,14 +51,14 @@ const platformServices = [
 ];
 ```
 
-### Supported Platforms
-1. **Zapier** ⚡ - Popular automation platform
-2. **IFTTT** 🔗 - If This Then That automation service
-3. **Power Automate** 🔄 - Microsoft's automation platform
-4. **n8n** 🛠️ - Open source workflow automation
-5. **Make** 🎯 - Advanced automation platform (formerly Integromat)
-6. **Yoom** 💫 - Japanese automation platform
-7. **Dify** 🤖 - AI-powered automation platform
+### Supported iPaaS Platforms
+1. **Zapier** ⚡ - Popular iPaaS with extensive connector library
+2. **IFTTT** 🔗 - If This Then That consumer-focused automation
+3. **Power Automate** 🔄 - Microsoft's enterprise iPaaS platform
+4. **n8n** 🛠️ - Open source workflow automation platform
+5. **Make** 🎯 - Advanced visual iPaaS platform (formerly Integromat)
+6. **Yoom** 💫 - Japanese iPaaS platform
+7. **Dify** 🤖 - AI-powered automation and integration platform
 
 ### Search Algorithm
 - Uses Web Workers for non-blocking search operations
@@ -90,16 +90,17 @@ public/
 
 ## Key Features
 
-1. **Service Search**: Multi-keyword search across titles, descriptions, and tags
-2. **Platform Filtering**: Filter by specific platforms or view all
+1. **Integration Service Search**: Multi-keyword search across service titles, descriptions, and tags
+2. **iPaaS Platform Filtering**: Filter by specific iPaaS platforms or view all
 3. **Category Filtering**: 
-   - All platforms (services available on all 7 platforms)
-   - Multiple platforms (2-6 platforms)
-   - Unique (platform-specific services)
-4. **Service Details**: Expandable cards showing platform-specific information
-5. **External Links**: Direct links to platform pages and Google search
-6. **Performance**: Web Workers for search, debounced input, virtualization for large lists
-7. **Service Name Normalization**: Automatic standardization of service names across platforms
+   - All platforms (connectors available on all 7 iPaaS platforms)
+   - Multiple platforms (connectors available on 2-6 platforms)
+   - Unique (platform-specific connectors)
+4. **Service Details**: Expandable cards showing platform-specific connector information
+5. **Direct Links**: Direct links to each platform's connector/service pages
+6. **Search Modes**: Title-only search vs full-text search
+7. **Performance**: Web Workers for search, debounced input, virtualization for large lists
+8. **Service Name Normalization**: Automatic standardization of service names across platforms
 
 ## Service Name Normalization
 
