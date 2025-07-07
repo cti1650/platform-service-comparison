@@ -432,11 +432,24 @@
       </button>
     );
 
-    const PlatformBadge = ({ platform }) => (
-      <span className="platform-badge">
-        {platform}
-      </span>
-    );
+    const PlatformBadge = ({ platform, service }) => {
+      const handlePlatformClick = () => {
+        const link = service.details[platform].link;
+        if (link) {
+          window.open(link, '_blank');
+        }
+      };
+
+      return (
+        <span 
+          className={`platform-badge ${service.details[platform].link ? 'cursor-pointer hover:scale-105 hover:shadow-lg' : ''}`}
+          onClick={handlePlatformClick}
+          title={service.details[platform].link ? `${platform}でのサービスページを開く` : platform}
+        >
+          {platform}
+        </span>
+      );
+    };
 
     const ServiceCard = ({ service }) => {
       const [isExpanded, setIsExpanded] = useState(false);
@@ -473,7 +486,7 @@
                 </h3>
                 <div className="flex gap-2 flex-wrap mb-3">
                   {service.platforms.map(platform => (
-                    <PlatformBadge key={platform} platform={platform} />
+                    <PlatformBadge key={platform} platform={platform} service={service} />
                   ))}
                 </div>
                 <div className="flex items-center gap-4 text-sm text-gray-600">
