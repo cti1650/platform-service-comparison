@@ -277,7 +277,7 @@
         
         // カテゴリー別の件数を計算
         const counts = {
-          'view-all': 0,  // 追加
+          'view-all': 0,
           all: 0,
           multiple: 0,
           unique: 0,
@@ -285,20 +285,37 @@
           totalUniqueServices: 0
         };
         
-        // カテゴリーフィルターを適用してカテゴリ別件数を計算
-        const categoryFilteredServices = services.filter(service => {
-          // プラットフォームフィルターのみを適用
+        // 1. キーワード検索を適用したベースサービスを作成
+        const searchFilteredServices = services.filter(service => {
+          if (searchQuery) {
+            const query = searchQuery.toLowerCase();
+            
+            if (searchMode === 'title-only') {
+              return hasSearchQueryKeyword(service.title, query);
+            } else {
+              return service.platforms.some(platform => {
+                const details = service.details[platform];
+                const targetText = [details.title, details.description, details.tag].filter(Boolean).join('\\n');
+                return hasSearchQueryKeyword(targetText, query);
+              }) || hasSearchQueryKeyword(service.title, query);
+            }
+          }
+          return true;
+        });
+        
+        // 2. カテゴリー別件数を計算（キーワード検索 + プラットフォームフィルター適用）
+        const categoryCountServices = searchFilteredServices.filter(service => {
+          // プラットフォームフィルターを適用
           if (platformFilter && platformFilter !== 'all') {
             if (!service.platforms.includes(platformFilter)) return false;
           }
           return true;
         });
 
-        categoryFilteredServices.forEach(service => {
+        categoryCountServices.forEach(service => {
           const platformCount = service.platforms.length;
           const totalPlatforms = 7;
           
-          // すべてのサービスをカウント
           counts['view-all']++;
           
           if (platformCount === totalPlatforms) counts.all++;
@@ -306,8 +323,8 @@
           else counts.multiple++;
         });
 
-        // プラットフォーム別件数を計算（カテゴリーフィルター適用後）
-        const platformCountServices = services.filter(service => {
+        // 3. プラットフォーム別件数を計算（キーワード検索 + カテゴリーフィルター適用）
+        const platformCountServices = searchFilteredServices.filter(service => {
           // カテゴリーフィルターを適用
           if (categoryFilter !== 'view-all') {
             const platformCount = service.platforms.length;
@@ -321,13 +338,12 @@
         });
 
         platformCountServices.forEach(service => {
-          // プラットフォーム別カウント
           service.platforms.forEach(platform => {
             counts.platforms[platform] = (counts.platforms[platform] || 0) + 1;
           });
         });
 
-        // 重複を除いた総サービス数を計算（カテゴリーフィルター適用後）
+        // 総サービス数を計算（キーワード検索 + カテゴリーフィルター適用後）
         counts.totalUniqueServices = platformCountServices.length;
         
         self.postMessage({
