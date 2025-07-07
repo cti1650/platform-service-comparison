@@ -43,6 +43,8 @@ const SERVICE_NAME_RULES = {
     'Google Drive™': 'Google Drive',
     'BigQuery': 'Google BigQuery',
     'Google BigQuery - Dev': 'Google BigQuery',
+    'google_sheets': 'Google Sheets',
+    'google_drive': 'Google Drive',
     
     // Social Media
     'Instagram for Business': 'Instagram',

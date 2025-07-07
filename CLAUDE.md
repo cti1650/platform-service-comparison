@@ -51,6 +51,15 @@ const platformServices = [
 ];
 ```
 
+### Supported Platforms
+1. **Zapier** ⚡ - Popular automation platform
+2. **IFTTT** 🔗 - If This Then That automation service
+3. **Power Automate** 🔄 - Microsoft's automation platform
+4. **n8n** 🛠️ - Open source workflow automation
+5. **Make** 🎯 - Advanced automation platform (formerly Integromat)
+6. **Yoom** 💫 - Japanese automation platform
+7. **Dify** 🤖 - AI-powered automation platform
+
 ### Search Algorithm
 - Uses Web Workers for non-blocking search operations
 - Supports multi-keyword search with AND logic
@@ -75,7 +84,8 @@ public/
     ├── powerAutomate.js
     ├── n8n.js
     ├── make.js
-    └── yoom.js
+    ├── yoom.js
+    └── dify.js
 ```
 
 ## Key Features
@@ -83,8 +93,8 @@ public/
 1. **Service Search**: Multi-keyword search across titles, descriptions, and tags
 2. **Platform Filtering**: Filter by specific platforms or view all
 3. **Category Filtering**: 
-   - All platforms (services available on all 5 platforms)
-   - Multiple platforms (2-4 platforms)
+   - All platforms (services available on all 7 platforms)
+   - Multiple platforms (2-6 platforms)
    - Unique (platform-specific services)
 4. **Service Details**: Expandable cards showing platform-specific information
 5. **External Links**: Direct links to platform pages and Google search

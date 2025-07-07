@@ -217,6 +217,7 @@
   <script src="./platforms/powerAutomate.js"></script>
   <script src="./platforms/n8n.js"></script>
   <script src="./platforms/yoom.js"></script>
+  <script src="./platforms/dify.js"></script>
   <script src="./js/serviceNameNormalizer.js"></script>
   <script src="./js/normalizationTest.js"></script>
 </head>
@@ -242,7 +243,7 @@
           // 1. カテゴリーフィルター（優先度1）
           if (categoryFilter !== 'view-all') { // view-allの場合はフィルタリングしない
             const platformCount = service.platforms.length;
-            const totalPlatforms = 6;
+            const totalPlatforms = 7;
             
             if (categoryFilter === 'all' && platformCount !== totalPlatforms) return false;
             if (categoryFilter === 'multiple' && (platformCount === 1 || platformCount === totalPlatforms)) return false;
@@ -288,7 +289,7 @@
 
         countedServices.forEach(service => {
           const platformCount = service.platforms.length;
-          const totalPlatforms = 6;
+          const totalPlatforms = 7;
           
           // すべてのサービスをカウント
           counts['view-all']++;
@@ -322,7 +323,8 @@
       'PowerAutomate': powerAutomateServices,
       n8n: n8nServices,
       make: makeServices,
-      yoom: yoomServices
+      yoom: yoomServices,
+      dify: difyServices
     };
 
     const formatedServiceTitle = (title) => {
@@ -717,7 +719,7 @@
                   active={selectedCategory === 'all'}
                   count={counts.all}
                   onClick={setSelectedCategory}
-                  description="5つすべてのプラットフォームで利用可能"
+                  description="7つすべてのプラットフォームで利用可能"
                 >
                   🎯 全プラットフォーム共通
                 </CategoryButton>
@@ -726,7 +728,7 @@
                   active={selectedCategory === 'multiple'}
                   count={counts.multiple}
                   onClick={setSelectedCategory}
-                  description="2-4つのプラットフォームで利用可能"
+                  description="2-6つのプラットフォームで利用可能"
                 >
                   🔗 複数プラットフォーム
                 </CategoryButton>
@@ -762,7 +764,8 @@
                     'PowerAutomate': '🔄',
                     'n8n': '🛠️',
                     'make': '🎯',
-                    'yoom': '💫'
+                    'yoom': '💫',
+                    'dify': '🤖'
                   };
                   return (
                     <PlatformButton
