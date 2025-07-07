@@ -89,3 +89,32 @@ public/
 4. **Service Details**: Expandable cards showing platform-specific information
 5. **External Links**: Direct links to platform pages and Google search
 6. **Performance**: Web Workers for search, debounced input, virtualization for large lists
+7. **Service Name Normalization**: Automatic standardization of service names across platforms
+
+## Service Name Normalization
+
+The application includes a comprehensive service name normalization system to handle inconsistencies across platforms:
+
+### Files
+- `public/js/serviceNameNormalizer.js`: Core normalization logic
+- `public/js/normalizationTest.js`: Testing and debugging utilities
+
+### Common Normalizations
+- **X/Twitter**: All variations → "X (formerly Twitter)"
+- **Microsoft Services**: Standardized to "Microsoft" prefix
+- **Google Services**: Japanese names → English equivalents
+- **Independent Publisher**: Removes " (Independent Publisher)" suffix
+- **Deprecated Services**: Handles "[DEPRECATED]" suffix
+
+### Testing
+Use browser console commands:
+```javascript
+// Run comprehensive test
+NormalizationTest.runNormalizationTest()
+
+// Show all normalization rules
+NormalizationTest.showNormalizationRules()
+
+// Get platform-specific statistics
+NormalizationTest.getActualPlatformStats()
+```

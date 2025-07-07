@@ -217,6 +217,8 @@
   <script src="./platforms/powerAutomate.js"></script>
   <script src="./platforms/n8n.js"></script>
   <script src="./platforms/yoom.js"></script>
+  <script src="./js/serviceNameNormalizer.js"></script>
+  <script src="./js/normalizationTest.js"></script>
 </head>
 
 <body>
@@ -325,17 +327,8 @@
 
     const formatedServiceTitle = (title) => {
       if (!title) return title;
-      let replacedTitle = title;
-      const replaceTitles = {
-        'kintone': 'Kintone'
-      };
-      if (replaceTitles[title]) {
-        replacedTitle = replaceTitles[title];
-      }
-      if (replacedTitle.endsWith(" (Independent Publisher)")) {
-        replacedTitle = replacedTitle.replace(" (Independent Publisher)", "");
-      }
-      return replacedTitle;
+      // 新しいサービス名正規化システムを使用
+      return window.ServiceNameNormalizer.normalizeServiceName(title);
     }
 
     // デバウンス関数
