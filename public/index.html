@@ -242,7 +242,7 @@
           // 1. カテゴリーフィルター（優先度1）
           if (categoryFilter !== 'view-all') { // view-allの場合はフィルタリングしない
             const platformCount = service.platforms.length;
-            const totalPlatforms = 5;
+            const totalPlatforms = 6;
             
             if (categoryFilter === 'all' && platformCount !== totalPlatforms) return false;
             if (categoryFilter === 'multiple' && (platformCount === 1 || platformCount === totalPlatforms)) return false;
@@ -288,7 +288,7 @@
 
         countedServices.forEach(service => {
           const platformCount = service.platforms.length;
-          const totalPlatforms = 5;
+          const totalPlatforms = 6;
           
           // すべてのサービスをカウント
           counts['view-all']++;
