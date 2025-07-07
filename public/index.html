@@ -510,6 +510,13 @@
                         </a>
                       )}
                     </h4>
+                    {service.details[platform].title !== service.title && (
+                      <div className="mb-2">
+                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                          {platform}での名称: {service.details[platform].title}
+                        </span>
+                      </div>
+                    )}
                     <p className="text-sm text-gray-600 mb-3 leading-relaxed" translate="yes">
                       {service.details[platform].description}
                     </p>
