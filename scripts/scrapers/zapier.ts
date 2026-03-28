@@ -93,32 +93,20 @@ export class ZapierScraper extends BaseScraper {
           if (ele.querySelector("span[data-color=error]")) return null;
 
           // タイトルを取得
-          // カードにはimgのalt属性にアプリ名が入っている
           const iconEl = ele.querySelector("img");
           let title = '';
 
-          // まずimgのalt属性からタイトルを取得（最も信頼性が高い）
-          if (iconEl?.getAttribute('alt')) {
-            title = iconEl.getAttribute('alt')!.trim();
+          // h2からタイトルを取得（data-testid="category-app-card--item"のカード内）
+          const h2El = ele.querySelector("h2");
+          if (h2El?.textContent) {
+            title = h2El.textContent.trim();
           }
 
-          // altがない場合は特定のセレクタを試行
+          // h2がない場合はh3を試行
           if (!title) {
-            const titleSelectors = [
-              "[class*=Text--paragraph3Bold]",
-              "h3",
-              "[class*=appName]",
-            ];
-            for (const sel of titleSelectors) {
-              const el = ele.querySelector(sel);
-              if (el?.textContent) {
-                const text = el.textContent.trim();
-                // 説明文のような長いテキストは除外
-                if (text.length < 50 && !text.includes('.')) {
-                  title = text;
-                  break;
-                }
-              }
+            const h3El = ele.querySelector("h3");
+            if (h3El?.textContent) {
+              title = h3El.textContent.trim();
             }
           }
 

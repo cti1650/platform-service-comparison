@@ -5,6 +5,7 @@ import { PowerAutomateScraper } from "./scrapers/powerAutomate.js";
 import { N8nScraper } from "./scrapers/n8n.js";
 import { YoomScraper } from "./scrapers/yoom.js";
 import { DifyScraper } from "./scrapers/dify.js";
+import { AnyflowScraper } from "./scrapers/anyflow.js";
 import { initDatabase, seedNormalizationRules, saveDatabase } from "./db/init.js";
 import { exportToJson } from "./db/export.js";
 import type { ScrapeResult } from "./scrapers/types.js";
@@ -28,6 +29,7 @@ async function main() {
     new N8nScraper(),
     new YoomScraper(),
     new DifyScraper(),
+    new AnyflowScraper(),
   ];
 
   const results: ScrapeResult[] = [];

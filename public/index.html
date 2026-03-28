@@ -219,6 +219,7 @@
   <script src="./platforms/n8n.js"></script>
   <script src="./platforms/yoom.js"></script>
   <script src="./platforms/dify.js"></script>
+  <script src="./platforms/anyflow.js"></script>
   <script src="./js/serviceNameNormalizer.js"></script>
   <script src="./js/normalizationTest.js"></script>
 
@@ -242,7 +243,8 @@
             n8n: json.platforms.n8n || [],
             make: json.platforms.make || [],
             yoom: json.platforms.yoom || [],
-            dify: json.platforms.dify || []
+            dify: json.platforms.dify || [],
+            anyflow: json.platforms.anyflow || []
           };
           this.loaded = true;
           console.log('Loaded data from JSON:', Object.keys(this.data).map(k => `${k}: ${this.data[k].length}`).join(', '));
@@ -265,7 +267,8 @@
           n8n: typeof n8nServices !== 'undefined' ? n8nServices : [],
           make: typeof makeServices !== 'undefined' ? makeServices : [],
           yoom: typeof yoomServices !== 'undefined' ? yoomServices : [],
-          dify: typeof difyServices !== 'undefined' ? difyServices : []
+          dify: typeof difyServices !== 'undefined' ? difyServices : [],
+          anyflow: typeof anyflowServices !== 'undefined' ? anyflowServices : []
         };
       }
     };
@@ -876,7 +879,8 @@
                     'n8n': '🛠️',
                     'make': '🎯',
                     'yoom': '💫',
-                    'dify': '🤖'
+                    'dify': '🤖',
+                    'anyflow': '🔌'
                   };
                   return (
                     <PlatformButton

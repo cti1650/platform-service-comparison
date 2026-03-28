@@ -13,7 +13,8 @@ export type PlatformName =
   | "powerAutomate"
   | "n8n"
   | "yoom"
-  | "dify";
+  | "dify"
+  | "anyflow";
 
 export interface ScrapeResult {
   platform: PlatformName;
