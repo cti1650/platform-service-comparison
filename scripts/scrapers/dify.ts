@@ -1,135 +1,172 @@
 import { BaseScraper } from "./base.js";
-import type { ServiceData, PlatformName } from "./types.js";
+import type { ServiceData, PlatformName, ScrapeResult } from "./types.js";
+
+interface GitHubTreeItem {
+  path: string;
+  type: "tree" | "blob";
+  sha: string;
+}
+
+interface PluginManifest {
+  name?: string;
+  label?: { en_US?: string; ja_JP?: string };
+  description?: { en_US?: string; ja_JP?: string };
+  icon?: string;
+  category?: string;
+  type?: string;
+}
 
 export class DifyScraper extends BaseScraper {
   readonly platform: PlatformName = "dify";
-  readonly url = "https://marketplace.dify.ai/";
+  readonly url = "https://marketplace.dify.ai/plugins";
 
-  protected async loadAllContent(): Promise<void> {
-    if (!this.page) return;
+  private readonly GITHUB_API_URL =
+    "https://api.github.com/repos/langgenius/dify-plugins/git/trees/main?recursive=1";
 
-    // React RSRでレンダリングされるため、コンテンツが読み込まれるまで待機
-    await this.page.waitForTimeout(3000);
+  async run(): Promise<ScrapeResult> {
+    const result: ScrapeResult = {
+      platform: this.platform,
+      services: [],
+      scrapedAt: new Date(),
+    };
 
-    // 無限スクロールまたはLoad Moreがある場合は対応
-    let previousHeight = 0;
-    let retries = 0;
-    const maxRetries = 50;
+    try {
+      console.log("[dify] Fetching plugin list from GitHub API...");
 
-    while (retries < maxRetries) {
-      await this.scrollToBottom();
-      await this.page.waitForTimeout(1000);
-
-      const currentHeight = await this.page.evaluate(() => document.body.scrollHeight);
-      if (currentHeight === previousHeight) {
-        retries++;
-        if (retries >= 3) break; // 3回連続で変化がなければ終了
-      } else {
-        retries = 0;
-        previousHeight = currentHeight;
+      // GitHub APIからプラグインリストを取得
+      const response = await fetch(this.GITHUB_API_URL);
+      if (!response.ok) {
+        throw new Error(`GitHub API error: ${response.status}`);
       }
+
+      const data = (await response.json()) as { tree: GitHubTreeItem[] };
+
+      // author/plugin-name パターンのディレクトリを抽出
+      const pluginPaths = data.tree
+        .filter((item) => item.type === "tree")
+        .map((item) => item.path)
+        .filter((path) => {
+          // author/plugin-name パターン（2階層のみ）
+          const parts = path.split("/");
+          return (
+            parts.length === 2 &&
+            !path.startsWith(".") &&
+            !["node_modules", "examples", "docs"].includes(parts[0])
+          );
+        });
+
+      console.log(`[dify] Found ${pluginPaths.length} plugins in repository`);
+
+      // 各プラグインの情報を取得
+      for (const pluginPath of pluginPaths) {
+        const [author, pluginName] = pluginPath.split("/");
+
+        // マニフェストファイルを取得してより詳細な情報を得る
+        let manifest: PluginManifest | null = null;
+        try {
+          const manifestUrl = `https://raw.githubusercontent.com/langgenius/dify-plugins/main/${pluginPath}/manifest.yaml`;
+          const manifestResponse = await fetch(manifestUrl);
+          if (manifestResponse.ok) {
+            const manifestText = await manifestResponse.text();
+            manifest = this.parseYamlSimple(manifestText);
+          }
+        } catch {
+          // manifest取得失敗は無視
+        }
+
+        // タイトルを決定
+        const title =
+          manifest?.label?.en_US ||
+          manifest?.name ||
+          pluginName.replace(/-/g, " ").replace(/_/g, " ");
+
+        // 説明を決定
+        const description = manifest?.description?.en_US || "";
+
+        // カテゴリ/タグを決定
+        const tag = manifest?.category || manifest?.type || "";
+
+        const service: ServiceData = {
+          title,
+          link: `https://marketplace.dify.ai/plugin/${author}/${pluginName}`,
+          description,
+          tag,
+          icon: manifest?.icon
+            ? `https://raw.githubusercontent.com/langgenius/dify-plugins/main/${pluginPath}/${manifest.icon}`
+            : "",
+        };
+
+        result.services.push(service);
+      }
+
+      console.log(`[dify] Processed ${result.services.length} plugins`);
+
+      // DBに保存
+      await this.saveToDatabase(result);
+    } catch (error) {
+      result.error = error instanceof Error ? error.message : String(error);
+      console.error(`[dify] Error: ${result.error}`);
     }
+
+    return result;
   }
 
-  async scrape(): Promise<ServiceData[]> {
-    if (!this.page) throw new Error("Page not initialized");
+  // 簡易YAMLパーサー（manifest.yamlの基本情報のみ抽出）
+  private parseYamlSimple(yaml: string): PluginManifest {
+    const result: PluginManifest = {};
+    const lines = yaml.split("\n");
 
-    // Difyのプラグインカードを取得
-    return await this.page.evaluate(() => {
-      // プラグインカードを探す（複数のセレクタパターンを試行）
-      const selectors = [
-        "a[href*='/plugins/']",
-        "a[href*='/plugin/']",
-        "[class*='card'] a",
-        "[class*='Card'] a",
-        "[class*='plugin']",
-        "[class*='Plugin']",
-      ];
+    let inLabel = false;
+    let inDescription = false;
 
-      let elements: Element[] = [];
-      for (const selector of selectors) {
-        const found = document.querySelectorAll(selector);
-        if (found.length > 0) {
-          elements = Array.from(found);
-          console.log(`Found ${found.length} elements with selector: ${selector}`);
-          break;
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+
+      // トップレベルのキー
+      if (!line.startsWith(" ") && !line.startsWith("\t")) {
+        inLabel = false;
+        inDescription = false;
+
+        if (trimmed.startsWith("name:")) {
+          result.name = trimmed.replace("name:", "").trim().replace(/['"]/g, "");
+        } else if (trimmed.startsWith("icon:")) {
+          result.icon = trimmed.replace("icon:", "").trim().replace(/['"]/g, "");
+        } else if (trimmed.startsWith("category:")) {
+          result.category = trimmed.replace("category:", "").trim().replace(/['"]/g, "");
+        } else if (trimmed.startsWith("type:")) {
+          result.type = trimmed.replace("type:", "").trim().replace(/['"]/g, "");
+        } else if (trimmed === "label:") {
+          inLabel = true;
+          result.label = {};
+        } else if (trimmed === "description:") {
+          inDescription = true;
+          result.description = {};
+        }
+      } else {
+        // ネストされたキー
+        if (inLabel && result.label) {
+          if (trimmed.startsWith("en_US:")) {
+            result.label.en_US = trimmed.replace("en_US:", "").trim().replace(/['"]/g, "");
+          } else if (trimmed.startsWith("ja_JP:")) {
+            result.label.ja_JP = trimmed.replace("ja_JP:", "").trim().replace(/['"]/g, "");
+          }
+        } else if (inDescription && result.description) {
+          if (trimmed.startsWith("en_US:")) {
+            result.description.en_US = trimmed.replace("en_US:", "").trim().replace(/['"]/g, "");
+          } else if (trimmed.startsWith("ja_JP:")) {
+            result.description.ja_JP = trimmed.replace("ja_JP:", "").trim().replace(/['"]/g, "");
+          }
         }
       }
+    }
 
-      // すべてのリンクを取得してプラグインURLをフィルタ
-      if (elements.length === 0) {
-        const allLinks = document.querySelectorAll('a[href]');
-        elements = Array.from(allLinks).filter(el => {
-          const href = (el as HTMLAnchorElement).href;
-          return href.includes('plugin') && !href.endsWith('/plugins') && !href.endsWith('/plugins/');
-        });
-      }
+    return result;
+  }
 
-      const seen = new Set<string>();
-
-      return elements
-        .map((ele) => {
-          const link = (ele as HTMLAnchorElement).href || ele.closest("a")?.href || "";
-
-          // 有効なリンクかチェック
-          if (!link || link === '#' || link.endsWith('/plugins') || link.endsWith('/plugins/')) return null;
-
-          // 重複を除去
-          if (seen.has(link)) return null;
-          seen.add(link);
-
-          // タイトルを取得（複数のパターンを試行）
-          const titleSelectors = [
-            "h3",
-            "h4",
-            "[class*='title']",
-            "[class*='name']",
-            "span",
-            "p",
-          ];
-          let title = "";
-          for (const sel of titleSelectors) {
-            const titleEl = ele.querySelector(sel);
-            if (titleEl?.textContent) {
-              title = titleEl.textContent.trim();
-              if (title.length > 2 && title.length < 100) break;
-            }
-          }
-          if (!title || title.length < 2) {
-            // リンクテキストから取得
-            title = ele.textContent?.trim().split("\n")[0]?.trim() || "";
-          }
-
-          // 説明を取得
-          const descSelectors = [
-            "[class*='description']",
-            "p:not(:first-child)",
-          ];
-          let description = "";
-          for (const sel of descSelectors) {
-            const descEl = ele.querySelector(sel);
-            if (descEl?.textContent && descEl.textContent !== title) {
-              description = descEl.textContent.trim();
-              break;
-            }
-          }
-
-          // アイコンを取得
-          const iconEl = ele.querySelector("img");
-          const icon = (iconEl as HTMLImageElement)?.src || "";
-
-          if (!title || title.length < 2) return null;
-
-          return {
-            title,
-            link,
-            description,
-            tag: "",
-            icon,
-          };
-        })
-        .filter((item): item is {title: string; link: string; description: string; tag: string; icon: string} => item !== null && item.title !== "");
-    });
+  // Playwrightは使用しないがBaseScraperの抽象メソッドを実装
+  async scrape(): Promise<ServiceData[]> {
+    return [];
   }
 }
 
