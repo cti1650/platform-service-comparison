@@ -92,34 +92,67 @@ export class ZapierScraper extends BaseScraper {
           // エラーマーク付きのものはスキップ
           if (ele.querySelector("span[data-color=error]")) return null;
 
-          // タイトルを取得（複数のパターンを試行）
-          const titleSelectors = [
-            "[class*=Text--paragraph3Bold]",
-            "h3",
-            "[class*=appName]",
-          ];
+          // タイトルを取得
+          // カードにはimgのalt属性にアプリ名が入っている
+          const iconEl = ele.querySelector("img");
           let title = '';
-          for (const sel of titleSelectors) {
-            const el = ele.querySelector(sel);
-            if (el?.textContent) {
-              title = el.textContent.trim();
-              break;
+
+          // まずimgのalt属性からタイトルを取得（最も信頼性が高い）
+          if (iconEl?.getAttribute('alt')) {
+            title = iconEl.getAttribute('alt')!.trim();
+          }
+
+          // altがない場合は特定のセレクタを試行
+          if (!title) {
+            const titleSelectors = [
+              "[class*=Text--paragraph3Bold]",
+              "h3",
+              "[class*=appName]",
+            ];
+            for (const sel of titleSelectors) {
+              const el = ele.querySelector(sel);
+              if (el?.textContent) {
+                const text = el.textContent.trim();
+                // 説明文のような長いテキストは除外
+                if (text.length < 50 && !text.includes('.')) {
+                  title = text;
+                  break;
+                }
+              }
             }
           }
-          if (!title) {
-            title = ele.textContent?.trim().split('\n')[0] || '';
+
+          // URLからアプリ名を抽出（最終手段）
+          if (!title && href.includes('/apps/')) {
+            const match = href.match(/\/apps\/([^/]+)/);
+            if (match) {
+              // URLスラッグをタイトルに変換（例: google-sheets → Google Sheets）
+              title = match[1]
+                .split('-')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+            }
           }
 
           if (!title || title.length < 2) return null;
 
+          // 説明文は別途取得（タイトルとの連結を避ける）
+          let description = '';
           const descEl = ele.querySelector("[class*=description], p");
+          if (descEl?.textContent) {
+            const descText = descEl.textContent.trim();
+            // タイトルと異なる場合のみ説明として使用
+            if (descText !== title && !title.includes(descText)) {
+              description = descText;
+            }
+          }
+
           const tagEl = ele.querySelector("[class*=tag], [class*=badge]");
-          const iconEl = ele.querySelector("img");
 
           return {
             title,
             link: href,
-            description: descEl?.textContent?.trim() || "",
+            description,
             tag: tagEl?.textContent?.trim() || "",
             icon: (iconEl as HTMLImageElement)?.src || "",
           };

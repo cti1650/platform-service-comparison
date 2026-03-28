@@ -3,12 +3,12 @@ import type { ServiceData, PlatformName } from "./types.js";
 
 export class PowerAutomateScraper extends BaseScraper {
   readonly platform: PlatformName = "powerAutomate";
-  readonly url = "https://learn.microsoft.com/ja-jp/connectors/connector-reference/";
+  readonly url = "https://learn.microsoft.com/en-us/connectors/connector-reference/";
 
-  // 複数のフィルターページURLを定義
+  // 複数のフィルターページURLを定義（英語版）
   private readonly filterPages = [
-    "https://learn.microsoft.com/ja-jp/connectors/connector-reference/connector-reference-standard-connectors",
-    "https://learn.microsoft.com/ja-jp/connectors/connector-reference/connector-reference-premium-connectors",
+    "https://learn.microsoft.com/en-us/connectors/connector-reference/connector-reference-standard-connectors",
+    "https://learn.microsoft.com/en-us/connectors/connector-reference/connector-reference-premium-connectors",
   ];
 
   protected async loadAllContent(): Promise<void> {

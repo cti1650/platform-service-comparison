@@ -14,8 +14,10 @@ export abstract class BaseScraper {
   abstract readonly url: string;
 
   async init(): Promise<void> {
+    // 環境変数 HEADLESS=false でヘッドレスモードを無効化
+    const headless = process.env.HEADLESS !== 'false';
     this.browser = await chromium.launch({
-      headless: true,
+      headless,
     });
     this.page = await this.browser.newPage({
       userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
