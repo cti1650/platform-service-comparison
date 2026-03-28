@@ -1,0 +1,82 @@
+name: Scrape iPaaS Services
+
+on:
+  schedule:
+    # 毎週日曜日の午前3時（JST）に実行
+    - cron: '0 18 * * 0'
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to scrape (all for all platforms)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - zapier
+          - ifttt
+          - make
+          - powerAutomate
+          - n8n
+          - yoom
+          - dify
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+
+      - name: Initialize database
+        run: npm run db:init
+
+      - name: Run scraper (all platforms)
+        if: ${{ github.event.inputs.platform == 'all' || github.event_name == 'schedule' }}
+        run: npm run scrape
+
+      - name: Run scraper (single platform)
+        if: ${{ github.event.inputs.platform != 'all' && github.event_name != 'schedule' }}
+        run: npm run scrape:${{ github.event.inputs.platform }}
+
+      - name: Export to JSON
+        run: npm run db:export
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          # データベースとJSONをコミット
+          git add data/services.db public/data.json
+
+          # 変更がある場合のみコミット
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update scraped data $(date +'%Y-%m-%d')"
+            git push
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: scrape-results
+          path: |
+            data/services.db
+            public/data.json
+          retention-days: 7

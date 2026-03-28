@@ -211,6 +211,7 @@
       color: #6b7280;
     }
   </style>
+  <!-- プラットフォームデータのフォールバック用 -->
   <script src="./platforms/make.js"></script>
   <script src="./platforms/ifttt.js"></script>
   <script src="./platforms/zapier.js"></script>
@@ -220,6 +221,55 @@
   <script src="./platforms/dify.js"></script>
   <script src="./js/serviceNameNormalizer.js"></script>
   <script src="./js/normalizationTest.js"></script>
+
+  <!-- データローダー（JSONがあれば優先して読み込む） -->
+  <script>
+    window.PlatformDataLoader = {
+      data: null,
+      loaded: false,
+
+      async loadFromJson() {
+        try {
+          const response = await fetch('./data.json');
+          if (!response.ok) throw new Error('JSON not found');
+          const json = await response.json();
+
+          // JSONデータをグローバル変数にマッピング
+          this.data = {
+            zapier: json.platforms.zapier || [],
+            IFTTT: json.platforms.ifttt || [],
+            PowerAutomate: json.platforms.powerAutomate || [],
+            n8n: json.platforms.n8n || [],
+            make: json.platforms.make || [],
+            yoom: json.platforms.yoom || [],
+            dify: json.platforms.dify || []
+          };
+          this.loaded = true;
+          console.log('Loaded data from JSON:', Object.keys(this.data).map(k => `${k}: ${this.data[k].length}`).join(', '));
+          return this.data;
+        } catch (e) {
+          console.log('JSON not available, using legacy JS files');
+          return null;
+        }
+      },
+
+      getData() {
+        if (this.loaded && this.data) {
+          return this.data;
+        }
+        // フォールバック：従来のJSファイルから読み込み
+        return {
+          zapier: typeof zapierServices !== 'undefined' ? zapierServices : [],
+          IFTTT: typeof iftttServices !== 'undefined' ? iftttServices : [],
+          PowerAutomate: typeof powerAutomateServices !== 'undefined' ? powerAutomateServices : [],
+          n8n: typeof n8nServices !== 'undefined' ? n8nServices : [],
+          make: typeof makeServices !== 'undefined' ? makeServices : [],
+          yoom: typeof yoomServices !== 'undefined' ? yoomServices : [],
+          dify: typeof difyServices !== 'undefined' ? difyServices : []
+        };
+      }
+    };
+  </script>
 </head>
 
 <body>
@@ -355,16 +405,8 @@
 
     const { useState, useMemo, useEffect, useCallback, useRef } = React;
 
-    // サービスデータ
-    const data = {
-      zapier: zapierServices,
-      IFTTT: iftttServices,
-      'PowerAutomate': powerAutomateServices,
-      n8n: n8nServices,
-      make: makeServices,
-      yoom: yoomServices,
-      dify: difyServices
-    };
+    // サービスデータ（初期値はフォールバック）
+    let data = window.PlatformDataLoader.getData();
 
     const formatedServiceTitle = (title) => {
       if (!title) return title;
@@ -889,7 +931,14 @@
       );
     };
 
-    ReactDOM.render(<App />, document.getElementById('root'));
+    // JSONデータの読み込みを試み、その後Reactアプリを起動
+    (async () => {
+      const jsonData = await window.PlatformDataLoader.loadFromJson();
+      if (jsonData) {
+        data = jsonData;
+      }
+      ReactDOM.render(<App />, document.getElementById('root'));
+    })();
   </script>
 </body>
 
