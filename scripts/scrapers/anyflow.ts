@@ -86,32 +86,59 @@ export class AnyflowScraper extends BaseScraper {
         return !href.includes("/search/") && href.includes("/connectors/");
       });
 
+      // カテゴリ名パターン（様々な表記に対応、長いパターンを先に配置）
+      const categoryPatterns = [
+        "プロジェクト管理",
+        "マーケティング",
+        "グループウェア",
+        "コミュニケーション",
+        "人事・労務",
+        "人事/労務",
+        "人事労務",
+        "財務・会計",
+        "財務/会計",
+        "ECサイト・決済",
+        "EC・決済",
+        "EC/決済",
+        "契約・法務",
+        "契約/法務",
+        "開発・運用",
+        "開発/運用",
+        "セキュリティ",
+        "営業",
+        "データ",
+        "会計",
+        "契約",
+        "ESG",
+      ];
+
       return links.map((ele) => {
         const href = (ele as HTMLAnchorElement).href;
+        const img = ele.querySelector("img");
 
-        // タイトルを取得（リンク内のテキストから）
-        const text = ele.textContent?.trim() || "";
-        // カテゴリ名を除去してタイトルを抽出
-        const categories = [
-          "営業",
-          "マーケティング",
-          "グループウェア",
-          "コミュニケーション",
-          "人事・労務",
-          "財務・会計",
-          "ECサイト・決済",
-          "契約・法務",
-          "開発・運用",
-          "データ",
-          "セキュリティ",
-          "プロジェクト管理",
-          "ESG",
-        ];
-        let title = text;
-        for (const cat of categories) {
-          if (title.includes(cat)) {
-            title = title.split(cat)[0].trim();
-            break;
+        // タイトル取得: p.text.sd.appear 要素があればそこから取得
+        let title = "";
+        const pElement = ele.querySelector("p.text.sd.appear");
+        if (pElement) {
+          title = pElement.textContent?.trim() || "";
+        }
+
+        // pがない場合、img要素のalt属性を試行
+        if (!title) {
+          title = img?.alt?.trim() || "";
+        }
+
+        // altもない場合はテキストからカテゴリ部分を除去
+        if (!title) {
+          const text = ele.textContent?.trim() || "";
+          title = text;
+          // カテゴリ名以降をすべて除去
+          for (const cat of categoryPatterns) {
+            const idx = title.indexOf(cat);
+            if (idx !== -1) {
+              title = title.substring(0, idx).trim();
+              break;
+            }
           }
         }
 
@@ -126,20 +153,14 @@ export class AnyflowScraper extends BaseScraper {
           }
         }
 
-        // 説明文を抽出（カテゴリ名以降のテキスト）
+        // 説明文を取得（別の要素から取得を試みる）
         let description = "";
-        for (const cat of categories) {
-          if (text.includes(cat)) {
-            const parts = text.split(cat);
-            if (parts[1]) {
-              description = parts[1].trim();
-            }
-            break;
-          }
+        const descEl = ele.querySelector("p:not(.text.sd.appear)");
+        if (descEl) {
+          description = descEl.textContent?.trim() || "";
         }
 
         // アイコンを取得
-        const img = ele.querySelector("img");
         const icon = img?.src || "";
 
         return {
