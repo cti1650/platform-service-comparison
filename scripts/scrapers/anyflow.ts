@@ -42,7 +42,8 @@ export class AnyflowScraper extends BaseScraper {
           waitUntil: "networkidle",
           timeout: 60000,
         });
-        await this.page!.waitForTimeout(2000);
+        // コネクタリンクがDOMに存在するまで待機
+        await this.page!.waitForSelector('a[href*="/connectors/"]', { state: 'attached', timeout: 30000 });
 
         const services = await this.scrapeCategory();
 

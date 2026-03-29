@@ -8,52 +8,64 @@ export class ZapierScraper extends BaseScraper {
   protected async loadAllContent(): Promise<void> {
     if (!this.page) return;
 
-    // ページが読み込まれるまで待機
-    await this.page.waitForTimeout(5000);
+    // アプリカードがDOMに存在するまで待機（visibleは不要）
+    console.log('[zapier] Waiting for app cards to load...');
+    await this.page.waitForSelector('a[href*="/apps/"]', { state: 'attached', timeout: 30000 });
 
     // Zapierは無限スクロール + ボタンの組み合わせ
-    // まずスクロールして全てのコンテンツを読み込む
     console.log('[zapier] Loading content via scroll...');
 
     let previousCount = 0;
-    let retries = 0;
-    const maxRetries = 100;
+    let stableCount = 0;
+    const maxStableIterations = 5;
 
-    while (retries < maxRetries) {
-      // スクロール
-      await this.scrollToBottom();
-      await this.page.waitForTimeout(1500);
-
-      // Load Moreボタンがあればクリック
-      try {
-        const button = await this.page.$('button:has-text("Load more")');
-        if (button) {
-          await button.click();
-          console.log('[zapier] Clicked Load more button');
-          await this.page.waitForTimeout(2000);
-        }
-      } catch {
-        // ボタンがない場合は無視
-      }
-
+    while (stableCount < maxStableIterations) {
       // 現在の要素数を取得
       const currentCount = await this.page.evaluate(() => {
         return document.querySelectorAll('a[href*="/apps/"]').length;
       });
 
-      if (currentCount % 100 === 0 || currentCount !== previousCount) {
-        console.log(`[zapier] Loaded ${currentCount} items...`);
+      // スクロール
+      await this.scrollToBottom();
+
+      // Load Moreボタンがあればクリック
+      const button = await this.page.$('button:has-text("Load more")');
+      if (button) {
+        await button.click();
+        console.log('[zapier] Clicked Load more button');
+        // 新しいコンテンツが読み込まれるまで待機
+        await this.page.waitForFunction(
+          (prevCount) => document.querySelectorAll('a[href*="/apps/"]').length > prevCount,
+          currentCount,
+          { timeout: 10000 }
+        ).catch(() => {
+          // タイムアウトした場合は無視（これ以上コンテンツがない可能性）
+        });
+      } else {
+        // ボタンがない場合はスクロールによる読み込みを待機
+        await this.page.waitForFunction(
+          (prevCount) => document.querySelectorAll('a[href*="/apps/"]').length > prevCount,
+          currentCount,
+          { timeout: 3000 }
+        ).catch(() => {
+          // タイムアウトした場合は無視
+        });
       }
 
-      if (currentCount === previousCount) {
-        retries++;
-        if (retries >= 10) {
-          console.log(`[zapier] No new items after ${retries} retries, stopping`);
-          break;
-        }
+      // 更新後の要素数を取得
+      const newCount = await this.page.evaluate(() => {
+        return document.querySelectorAll('a[href*="/apps/"]').length;
+      });
+
+      if (newCount % 100 === 0 || newCount !== previousCount) {
+        console.log(`[zapier] Loaded ${newCount} items...`);
+      }
+
+      if (newCount === previousCount) {
+        stableCount++;
       } else {
-        retries = 0;
-        previousCount = currentCount;
+        stableCount = 0;
+        previousCount = newCount;
       }
     }
 

@@ -7,8 +7,9 @@ export class IftttScraper extends BaseScraper {
 
   protected async loadAllContent(): Promise<void> {
     if (!this.page) return;
-    // ページが完全に読み込まれるまで待機
-    await this.page.waitForTimeout(3000);
+    // サービスリンクがDOMに存在するまで待機
+    console.log('[ifttt] Waiting for service links to load...');
+    await this.page.waitForSelector('a[href^="/"]', { state: 'attached', timeout: 30000 });
   }
 
   async scrape(): Promise<ServiceData[]> {

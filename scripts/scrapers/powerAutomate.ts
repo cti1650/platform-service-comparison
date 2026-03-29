@@ -13,8 +13,9 @@ export class PowerAutomateScraper extends BaseScraper {
 
   protected async loadAllContent(): Promise<void> {
     if (!this.page) return;
-    // ページが完全に読み込まれるまで待機
-    await this.page.waitForTimeout(3000);
+    // テーブルがDOMに存在するまで待機
+    console.log('[powerAutomate] Waiting for connector table to load...');
+    await this.page.waitForSelector('table td a[href*="/connectors/"]', { state: 'attached', timeout: 30000 });
   }
 
   async scrape(): Promise<ServiceData[]> {
@@ -37,7 +38,8 @@ export class PowerAutomateScraper extends BaseScraper {
     for (const pageUrl of this.filterPages) {
       try {
         await this.page.goto(pageUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
-        await this.page.waitForTimeout(3000);
+        // テーブルがDOMに存在するまで待機
+        await this.page.waitForSelector('table td a[href*="/connectors/"]', { state: 'attached', timeout: 30000 });
 
         const pageServices = await this.scrapeCurrentPage();
         let newCount = 0;

@@ -8,56 +8,114 @@ export class N8nScraper extends BaseScraper {
   protected async loadAllContent(): Promise<void> {
     if (!this.page) return;
 
-    // ページが読み込まれるまで待機
-    await this.page.waitForTimeout(5000);
+    // インテグレーションリンクがDOMに存在するまで待機
+    console.log('[n8n] Waiting for integration links to load...');
+    await this.page.waitForSelector('a[href*="/integrations/"]', { state: 'attached', timeout: 30000 });
 
     // Load Moreボタンをクリックし続けるか、無限スクロール
     const loadMoreSelector = 'button:has-text("Load more"), button:has-text("Show more"), [class*="load-more"]';
 
     // まずLoad Moreボタンを試す
-    let loadMoreFound = false;
-    try {
-      const button = await this.page.$(loadMoreSelector);
-      if (button) {
-        loadMoreFound = true;
-        console.log('[n8n] Found Load More button');
-        await this.clickLoadMoreUntilDone(loadMoreSelector, 200, 2000);
-      }
-    } catch {
-      // ボタンが見つからない場合はスクロール
-    }
-
-    // ボタンが見つからない場合は無限スクロール
-    if (!loadMoreFound) {
+    const button = await this.page.$(loadMoreSelector);
+    if (button) {
+      console.log('[n8n] Found Load More button');
+      await this.clickLoadMoreWithWait(loadMoreSelector);
+    } else {
+      // ボタンが見つからない場合は無限スクロール
       console.log('[n8n] Using infinite scroll...');
-      let previousCount = 0;
-      let retries = 0;
-      const maxRetries = 100;
+      await this.scrollLoadWithWait();
+    }
+  }
 
-      while (retries < maxRetries) {
-        // 複数回スクロールを試みる
-        for (let i = 0; i < 3; i++) {
-          await this.scrollToBottom();
-          await this.page.waitForTimeout(500);
-        }
-        await this.page.waitForTimeout(2000);
+  private async clickLoadMoreWithWait(selector: string): Promise<void> {
+    if (!this.page) return;
 
-        // 現在の要素数を取得
-        const currentCount = await this.page.evaluate(() => {
-          return document.querySelectorAll('a[href*="/integrations/"]').length;
-        });
+    let stableCount = 0;
+    const maxStableIterations = 5;
+    let previousCount = 0;
 
-        console.log(`[n8n] Loaded ${currentCount} items...`);
+    while (stableCount < maxStableIterations) {
+      const currentCount = await this.page.evaluate(() => {
+        return document.querySelectorAll('a[href*="/integrations/"]').length;
+      });
 
-        if (currentCount === previousCount) {
-          retries++;
-          if (retries >= 10) break;
-        } else {
-          retries = 0;
-          previousCount = currentCount;
-        }
+      const button = await this.page.$(selector);
+      if (!button) {
+        console.log('[n8n] No more Load More button');
+        break;
+      }
+
+      await button.click();
+
+      // 新しいコンテンツが読み込まれるまで待機
+      await this.page.waitForFunction(
+        (prevCount) => document.querySelectorAll('a[href*="/integrations/"]').length > prevCount,
+        currentCount,
+        { timeout: 10000 }
+      ).catch(() => {});
+
+      const newCount = await this.page.evaluate(() => {
+        return document.querySelectorAll('a[href*="/integrations/"]').length;
+      });
+
+      if (newCount % 100 === 0 || newCount !== previousCount) {
+        console.log(`[n8n] Loaded ${newCount} items...`);
+      }
+
+      if (newCount === previousCount) {
+        stableCount++;
+      } else {
+        stableCount = 0;
+        previousCount = newCount;
       }
     }
+  }
+
+  private async scrollLoadWithWait(): Promise<void> {
+    if (!this.page) return;
+
+    let stableCount = 0;
+    const maxStableIterations = 10;
+    let previousCount = 0;
+
+    while (stableCount < maxStableIterations) {
+      const currentCount = await this.page.evaluate(() => {
+        return document.querySelectorAll('a[href*="/integrations/"]').length;
+      });
+
+      // Load Moreボタンの位置までスクロール（ページ最下部ではなく）
+      await this.page.evaluate(() => {
+        const loadMoreBtn = document.querySelector('button:has-text("Load more"), button:has-text("Show more"), [class*="load-more"]');
+        if (loadMoreBtn) {
+          loadMoreBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          // ボタンが見つからない場合は少しだけスクロール
+          window.scrollBy(0, window.innerHeight);
+        }
+      });
+
+      // 新しいコンテンツが読み込まれるまで待機
+      await this.page.waitForFunction(
+        (prevCount) => document.querySelectorAll('a[href*="/integrations/"]').length > prevCount,
+        currentCount,
+        { timeout: 5000 }
+      ).catch(() => {});
+
+      const newCount = await this.page.evaluate(() => {
+        return document.querySelectorAll('a[href*="/integrations/"]').length;
+      });
+
+      console.log(`[n8n] Loaded ${newCount} items...`);
+
+      if (newCount === previousCount) {
+        stableCount++;
+      } else {
+        stableCount = 0;
+        previousCount = newCount;
+      }
+    }
+
+    console.log(`[n8n] Finished loading, total: ${previousCount} items`);
   }
 
   async scrape(): Promise<ServiceData[]> {
