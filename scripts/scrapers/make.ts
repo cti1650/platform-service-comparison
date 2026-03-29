@@ -8,91 +8,74 @@ export class MakeScraper extends BaseScraper {
   protected async loadAllContent(): Promise<void> {
     if (!this.page) return;
 
-    // ページが読み込まれるまで待機
-    await this.page.waitForTimeout(5000);
+    console.log('[make] Waiting for app cards to load...');
+    await this.page.waitForSelector('a[href*="/integrations/"]', { state: 'attached', timeout: 30000 });
+
+    // Load Moreボタンの出現を待つ
+    console.log('[make] Waiting for Load More button...');
+    await this.page.waitForSelector("[data-cy='load-more']", { state: 'attached', timeout: 30000 });
 
     // Load Moreボタンをクリックし続ける
-    const loadMoreSelectors = [
-      "[data-cy='load-more']",
-      "button:has-text('Load More')",
-      "button:has-text('Load more')",
-      "[class*='LoadMore'] button",
-      "button[class*='load']",
-    ];
+    let previousCount = 0;
+    let stableCount = 0;
 
-    let found = false;
-    for (const selector of loadMoreSelectors) {
-      try {
-        const button = await this.page.$(selector);
-        if (button) {
-          console.log(`[make] Found Load More button with selector: ${selector}`);
-          await this.clickLoadMoreUntilDone(selector, 300, 2000);
-          found = true;
-          break;
-        }
-      } catch {
-        continue;
+    while (stableCount < 5) {
+      const button = await this.page.$("[data-cy='load-more']");
+      if (!button) {
+        console.log('[make] No more Load More button');
+        break;
+      }
+
+      const currentCount = await this.page.evaluate(() =>
+        document.querySelectorAll('a[href*="/integrations/"]').length
+      );
+
+      await button.click();
+
+      // 新しいコンテンツが読み込まれるまで待機
+      await this.page.waitForFunction(
+        (prevCount) => document.querySelectorAll('a[href*="/integrations/"]').length > prevCount,
+        currentCount,
+        { timeout: 10000 }
+      ).catch(() => {});
+
+      const newCount = await this.page.evaluate(() =>
+        document.querySelectorAll('a[href*="/integrations/"]').length
+      );
+
+      if (newCount % 100 === 0 || newCount !== previousCount) {
+        console.log(`[make] Loaded ${newCount} items...`);
+      }
+
+      if (newCount === previousCount) {
+        stableCount++;
+      } else {
+        stableCount = 0;
+        previousCount = newCount;
       }
     }
 
-    if (!found) {
-      // ボタンが見つからない場合はスクロールで読み込み
-      console.log(`[make] No Load More button found, trying scroll...`);
-      let previousCount = 0;
-      let retries = 0;
-      while (retries < 50) {
-        await this.scrollToBottom();
-        await this.page.waitForTimeout(2000);
-
-        const currentCount = await this.page.evaluate(() => {
-          return document.querySelectorAll('a[href*="/integrations/"]').length;
-        });
-        console.log(`[make] Loaded ${currentCount} items...`);
-
-        if (currentCount === previousCount) {
-          retries++;
-          if (retries >= 5) break;
-        } else {
-          retries = 0;
-          previousCount = currentCount;
-        }
-      }
-    }
+    console.log(`[make] Finished loading, total: ${previousCount} items`);
   }
 
   async scrape(): Promise<ServiceData[]> {
     if (!this.page) throw new Error("Page not initialized");
 
     return await this.page.evaluate(() => {
-      // 複数のセレクタパターンを試行
-      const selectors = [
-        "a[class*=AppCard_appCard__]",
-        "a[href*='/en/integrations/']",
-        "[data-cy='app-card'] a",
-      ];
-
-      let elements: Element[] = [];
-      for (const selector of selectors) {
-        const found = document.querySelectorAll(selector);
-        if (found.length > 0) {
-          elements = Array.from(found);
-          break;
-        }
-      }
-
+      const links = document.querySelectorAll('a[href*="/integrations/"]');
       const seen = new Set<string>();
-      return elements.map((ele) => {
-        const href = (ele as HTMLAnchorElement).href || '';
 
-        // 重複チェック
+      return Array.from(links).map((ele) => {
+        const href = (ele as HTMLAnchorElement).href;
+
         if (seen.has(href)) return null;
         seen.add(href);
 
-        // インテグレーションページへのリンクのみ
-        if (!href.includes('/integrations/')) return null;
+        // /integrations/直下のみ対象
+        if (!href.match(/\/integrations\/[^/]+\/?$/)) return null;
 
-        const nameEl = ele.querySelector("[class*=AppCard_appName__], [class*=appName], h3, strong");
-        const iconEl = ele.querySelector("[class*=AppIcon] img, img");
+        const nameEl = ele.querySelector('h3, strong, [class*="appName"]');
+        const iconEl = ele.querySelector('img');
 
         const title = nameEl?.textContent?.trim() || ele.textContent?.trim().split('\n')[0] || '';
         if (!title || title.length < 2) return null;
@@ -104,7 +87,7 @@ export class MakeScraper extends BaseScraper {
           tag: "",
           icon: (iconEl as HTMLImageElement)?.src || "",
         };
-      }).filter((item): item is {title: string; link: string; description: string; tag: string; icon: string} => item !== null);
+      }).filter((item): item is ServiceData => item !== null);
     });
   }
 }
