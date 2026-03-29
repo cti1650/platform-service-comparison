@@ -33,8 +33,17 @@ export class DifyScraper extends BaseScraper {
     try {
       console.log("[dify] Fetching plugin list from GitHub API...");
 
-      // GitHub APIからプラグインリストを取得
-      const response = await fetch(this.GITHUB_API_URL);
+      // GitHub APIからプラグインリストを取得（GITHUB_TOKENがあれば使用）
+      const headers: Record<string, string> = {
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'platform-service-comparison-scraper',
+      };
+      if (process.env.GITHUB_TOKEN) {
+        headers['Authorization'] = `Bearer ${process.env.GITHUB_TOKEN}`;
+        console.log("[dify] Using GITHUB_TOKEN for authentication");
+      }
+
+      const response = await fetch(this.GITHUB_API_URL, { headers });
       if (!response.ok) {
         throw new Error(`GitHub API error: ${response.status}`);
       }

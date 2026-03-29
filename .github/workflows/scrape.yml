@@ -52,10 +52,14 @@ jobs:
       - name: Run scraper (all platforms)
         if: ${{ github.event.inputs.platform == 'all' || github.event_name == 'schedule' }}
         run: npm run scrape
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run scraper (single platform)
         if: ${{ github.event.inputs.platform != 'all' && github.event_name != 'schedule' }}
         run: npm run scrape:${{ github.event.inputs.platform }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Commit and push changes
         run: |
