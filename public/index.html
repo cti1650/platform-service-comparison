@@ -4,10 +4,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="主要iPaaSプラットフォーム（Zapier, IFTTT, Make, Power Automate, n8n, Yoom, Dify, Anyflow）の連携サービスを横断検索・比較できるツール">
+  <meta name="theme-color" content="#3b82f6">
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-SZ0XT7E1JT"></script>
   <script>
-    // Google Analytics
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
@@ -19,196 +20,347 @@
   <script crossorigin src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
   <link href="https://use.fontawesome.com/releases/v6.2.0/css/all.css" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              200: '#bfdbfe',
+              300: '#93c5fd',
+              400: '#60a5fa',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.3s ease-out',
+            'slide-up': 'slideUp 0.4s ease-out',
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideUp: {
+              '0%': { opacity: '0', transform: 'translateY(10px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap');
+
     * {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
-    
+
+    :root {
+      --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      --gradient-accent: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    }
+
     body {
-      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
       min-height: 100vh;
     }
-    
-    .glass-effect {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(226, 232, 240, 0.5);
-      border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    }
-    
-    .card-gradient {
-      background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-      border-radius: 16px;
-      transition: all 0.3s ease;
-    }
-    
-    .card-gradient:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-    }
-    
-    .platform-badge {
-      background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
-      color: white;
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-size: 0.875rem;
-      font-weight: 500;
-      transition: all 0.3s ease;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    }
-    
-    .platform-badge:hover {
-      transform: scale(1.05);
-    }
-    
-    .search-container {
+
+    /* ヘッダー */
+    .header-section {
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
       position: relative;
+      overflow: hidden;
+    }
+
+    .header-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='m36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      opacity: 0.5;
+    }
+
+    .header-title {
+      background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    /* グラスエフェクト */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: var(--shadow-xl);
+    }
+
+    /* 検索コンテナ */
+    .search-container {
       background: white;
       border-radius: 16px;
-      padding: 4px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(226, 232, 240, 0.8);
+      box-shadow: var(--shadow-lg), 0 0 0 1px rgba(59, 130, 246, 0.1);
+      transition: all 0.3s ease;
     }
-    
+
+    .search-container:focus-within {
+      box-shadow: var(--shadow-xl), 0 0 0 3px rgba(59, 130, 246, 0.2);
+      transform: translateY(-2px);
+    }
+
     .search-input {
       background: transparent;
       border: none;
       outline: none;
-      padding: 16px 24px;
       font-size: 1rem;
-      border-radius: 12px;
       width: 100%;
       transition: all 0.3s ease;
     }
-    
-    .search-input:focus {
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-    
+
     .search-input::placeholder {
       color: #9ca3af;
     }
-    
-    .filter-button {
-      background: white;
-      border: 2px solid rgba(226, 232, 240, 0.8);
-      border-radius: 12px;
-      padding: 12px 20px;
+
+    /* フィルターボタン */
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
       font-weight: 500;
-      transition: all 0.3s ease;
-      color: #374151;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
       cursor: pointer;
-      outline: none;
+      border: 2px solid transparent;
+      background: white;
+      color: #374151;
+      box-shadow: var(--shadow-sm);
     }
-    
-    .filter-button:hover {
-      background: #f8fafc;
-      transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-      border-color: #cbd5e1;
+
+    .filter-chip:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
     }
-    
-    .filter-button:focus {
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-    
-    .filter-button.active {
-      background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+
+    .filter-chip.active {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
       color: white;
-      border-color: #3b82f6;
-      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
     }
-    
-    .filter-button.active:hover {
-      background: linear-gradient(135deg, #2563eb 0%, #5b21b6 100%);
-      transform: translateY(-2px);
+
+    .filter-chip.active:hover {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
     }
-    
-    .filter-button.active .count-badge {
+
+    .filter-chip .count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.5rem;
+      height: 1.5rem;
+      padding: 0 0.375rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #f3f4f6;
+      color: #6b7280;
+    }
+
+    .filter-chip.active .count {
       background: rgba(255, 255, 255, 0.25);
       color: white;
     }
-    
-    .scroll-to-top {
-      background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
-      box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+
+    /* プラットフォームボタン */
+    .platform-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.5rem 0.875rem;
+      border-radius: 9999px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      background: white;
+      color: #4b5563;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid #e5e7eb;
+    }
+
+    .platform-chip:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+      border-color: #d1d5db;
+    }
+
+    .platform-chip.active {
+      background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+    }
+
+    /* サービスカード */
+    .service-card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: var(--shadow-md);
       transition: all 0.3s ease;
+      overflow: hidden;
+      border: 1px solid rgba(0, 0, 0, 0.05);
     }
-    
-    .scroll-to-top:hover {
+
+    .service-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-xl);
+    }
+
+    /* プラットフォームバッジ */
+    .platform-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.625rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .platform-badge.zapier { background: #ff4a00; color: white; }
+    .platform-badge.ifttt { background: #000000; color: white; }
+    .platform-badge.powerautomate { background: #0066ff; color: white; }
+    .platform-badge.n8n { background: #ea4b71; color: white; }
+    .platform-badge.make { background: #6d4aff; color: white; }
+    .platform-badge.yoom { background: #00c4cc; color: white; }
+    .platform-badge.dify { background: #1570ef; color: white; }
+    .platform-badge.anyflow { background: #10b981; color: white; }
+
+    .platform-badge:hover {
+      transform: scale(1.05);
+      filter: brightness(1.1);
+    }
+
+    /* スクロールトップボタン */
+    .scroll-top-btn {
+      position: fixed;
+      right: 1.5rem;
+      bottom: 1.5rem;
+      width: 3rem;
+      height: 3rem;
+      border-radius: 9999px;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .scroll-top-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 15px 40px rgba(59, 130, 246, 0.4);
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
     }
-    
-    .animate-fadeIn {
-      animation: fadeIn 0.3s ease-in-out;
-    }
-    
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
+
+    /* ローディングスピナー */
     .loading-spinner {
-      border: 2px solid #f3f4f6;
-      border-top: 2px solid #3b82f6;
+      width: 1.25rem;
+      height: 1.25rem;
+      border: 2px solid #e5e7eb;
+      border-top-color: #3b82f6;
       border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      animation: spin 1s linear infinite;
+      animation: spin 0.8s linear infinite;
     }
-    
+
     @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      to { transform: rotate(360deg); }
     }
-    
-    .header-title {
-      background: linear-gradient(135deg, #1e40af 0%, #6366f1 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      font-weight: 700;
-      font-size: 2.5rem;
-      text-align: center;
-      margin-bottom: 2rem;
+
+    /* レスポンシブ */
+    @media (max-width: 640px) {
+      .filter-chip {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8125rem;
+      }
+
+      .platform-chip {
+        padding: 0.375rem 0.625rem;
+        font-size: 0.75rem;
+      }
+
+      .scroll-top-btn {
+        right: 1rem;
+        bottom: 1rem;
+        width: 2.5rem;
+        height: 2.5rem;
+      }
     }
-    
-    .results-count {
-      background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+
+    /* 結果がない場合 */
+    .no-results-container {
+      background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+      border: 2px dashed #d1d5db;
+      border-radius: 16px;
+    }
+
+    /* スクロールバー */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* フィルターセクション */
+    .filter-section {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    /* 統計カード */
+    .stats-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
       border-radius: 12px;
-      padding: 8px 16px;
-      font-weight: 500;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
-    }
-    
-    .no-results {
-      background: white;
-      border: 1px solid rgba(226, 232, 240, 0.8);
-      color: #374151;
-    }
-    
-    .no-results h3 {
-      color: #1f2937;
-    }
-    
-    .no-results p {
-      color: #6b7280;
+      padding: 1rem 1.5rem;
+      box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
     }
   </style>
   <!-- プラットフォームデータのフォールバック用 -->
@@ -223,7 +375,7 @@
   <script src="./js/serviceNameNormalizer.js"></script>
   <script src="./js/normalizationTest.js"></script>
 
-  <!-- データローダー（JSONがあれば優先して読み込む） -->
+  <!-- データローダー -->
   <script>
     window.PlatformDataLoader = {
       data: null,
@@ -235,7 +387,6 @@
           if (!response.ok) throw new Error('JSON not found');
           const json = await response.json();
 
-          // JSONデータをグローバル変数にマッピング
           this.data = {
             zapier: json.platforms.zapier || [],
             IFTTT: json.platforms.ifttt || [],
@@ -259,7 +410,6 @@
         if (this.loaded && this.data) {
           return this.data;
         }
-        // フォールバック：従来のJSファイルから読み込み
         return {
           zapier: typeof zapierServices !== 'undefined' ? zapierServices : [],
           IFTTT: typeof iftttServices !== 'undefined' ? iftttServices : [],
@@ -279,7 +429,6 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    // Web Workerのコード内のカテゴリーフィルター部分を変更
     const searchWorkerCode = `
       const hasSearchQueryKeyword = (text, query) => {
         if (!text) return false;
@@ -291,32 +440,27 @@
       };
       self.onmessage = function(e) {
         const { services, searchQuery, platformFilter, categoryFilter, searchMode } = e.data;
-        
+
         const filteredServices = services.filter(service => {
-          // 1. カテゴリーフィルター（優先度1）
-          if (categoryFilter !== 'view-all') { // view-allの場合はフィルタリングしない
+          if (categoryFilter !== 'view-all') {
             const platformCount = service.platforms.length;
-            const totalPlatforms = 7;
-            
+            const totalPlatforms = 8;
+
             if (categoryFilter === 'all' && platformCount !== totalPlatforms) return false;
-            if (categoryFilter === 'multiple' && (platformCount === 1 || platformCount === totalPlatforms)) return false;
+            if (categoryFilter === 'multiple' && platformCount < 2) return false;
             if (categoryFilter === 'unique' && platformCount !== 1) return false;
           }
 
-          // 2. プラットフォームフィルター（優先度2）
           if (platformFilter && platformFilter !== 'all') {
             if (!service.platforms.includes(platformFilter)) return false;
           }
-          
-          // 3. 検索クエリフィルター（優先度3）
+
           if (searchQuery) {
             const query = searchQuery.toLowerCase();
-            
+
             if (searchMode === 'title-only') {
-              // タイトルのみ検索モード
               return hasSearchQueryKeyword(service.title, query);
             } else {
-              // 全体検索モード（デフォルト）
               return service.platforms.some(platform => {
                 const details = service.details[platform];
                 const targetText = [details.title, details.description, details.tag].filter(Boolean).join('\\n');
@@ -324,11 +468,10 @@
               }) || hasSearchQueryKeyword(service.title, query);
             }
           }
-          
+
           return true;
         });
-        
-        // カテゴリー別の件数を計算
+
         const counts = {
           'view-all': 0,
           all: 0,
@@ -337,12 +480,11 @@
           platforms: {},
           totalUniqueServices: 0
         };
-        
-        // 1. キーワード検索を適用したベースサービスを作成
+
         const searchFilteredServices = services.filter(service => {
           if (searchQuery) {
             const query = searchQuery.toLowerCase();
-            
+
             if (searchMode === 'title-only') {
               return hasSearchQueryKeyword(service.title, query);
             } else {
@@ -355,10 +497,8 @@
           }
           return true;
         });
-        
-        // 2. カテゴリー別件数を計算（キーワード検索 + プラットフォームフィルター適用）
+
         const categoryCountServices = searchFilteredServices.filter(service => {
-          // プラットフォームフィルターを適用
           if (platformFilter && platformFilter !== 'all') {
             if (!service.platforms.includes(platformFilter)) return false;
           }
@@ -367,24 +507,22 @@
 
         categoryCountServices.forEach(service => {
           const platformCount = service.platforms.length;
-          const totalPlatforms = 7;
-          
+          const totalPlatforms = 8;
+
           counts['view-all']++;
-          
+
           if (platformCount === totalPlatforms) counts.all++;
-          else if (platformCount === 1) counts.unique++;
-          else counts.multiple++;
+          if (platformCount >= 2) counts.multiple++;
+          if (platformCount === 1) counts.unique++;
         });
 
-        // 3. プラットフォーム別件数を計算（キーワード検索 + カテゴリーフィルター適用）
         const platformCountServices = searchFilteredServices.filter(service => {
-          // カテゴリーフィルターを適用
           if (categoryFilter !== 'view-all') {
             const platformCount = service.platforms.length;
-            const totalPlatforms = 7;
-            
+            const totalPlatforms = 8;
+
             if (categoryFilter === 'all' && platformCount !== totalPlatforms) return false;
-            if (categoryFilter === 'multiple' && (platformCount === 1 || platformCount === totalPlatforms)) return false;
+            if (categoryFilter === 'multiple' && platformCount < 2) return false;
             if (categoryFilter === 'unique' && platformCount !== 1) return false;
           }
           return true;
@@ -396,9 +534,8 @@
           });
         });
 
-        // 総サービス数を計算（キーワード検索 + カテゴリーフィルター適用後）
         counts.totalUniqueServices = platformCountServices.length;
-        
+
         self.postMessage({
           services: filteredServices,
           counts
@@ -408,59 +545,58 @@
 
     const { useState, useMemo, useEffect, useCallback, useRef } = React;
 
-    // サービスデータ（初期値はフォールバック）
     let data = window.PlatformDataLoader.getData();
 
     const formatedServiceTitle = (title) => {
       if (!title) return title;
-      // 新しいサービス名正規化システムを使用
       return window.ServiceNameNormalizer.normalizeServiceName(title);
     }
 
-    // デバウンス関数
     const useDebounce = (value, delay) => {
       const [debouncedValue, setDebouncedValue] = useState(value);
       useEffect(() => {
         const handler = setTimeout(() => {
           setDebouncedValue(value);
         }, delay);
-        return () => {
-          clearTimeout(handler);
-        };
+        return () => clearTimeout(handler);
       }, [value, delay]);
       return debouncedValue;
     };
+
+    // ヘッダーコンポーネント
+    const Header = ({ totalServices }) => (
+      <header className="header-section relative py-8 sm:py-12 lg:py-16 px-4">
+        <div className="relative z-10 max-w-4xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full text-white/90 text-sm mb-4 backdrop-blur-sm">
+            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+            <span>{totalServices.toLocaleString()}+ サービスを収録</span>
+          </div>
+          <h1 className="header-title text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+            iPaaS連携サービス比較ツール
+          </h1>
+          <p className="text-blue-100 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+            Zapier, IFTTT, Make, Power Automate, n8n, Yoom, Dify, Anyflow<br className="hidden sm:block" />
+            主要8プラットフォームの連携サービスを横断検索
+          </p>
+        </div>
+      </header>
+    );
+
+    // 検索バーコンポーネント
     const SearchBar = ({ searchQuery, onSearchChange, searchMode, onSearchModeChange }) => {
-      const [suggestions, setSuggestions] = useState([]);
-      const [showSuggestions, setShowSuggestions] = useState(false);
       const inputRef = useRef(null);
-      
+
       const handleKeyDown = (e) => {
         if (e.key === 'Escape') {
-          setShowSuggestions(false);
-          if (inputRef.current) {
-            inputRef.current.blur();
-          }
-        }
-        if (e.key === 'Enter') {
-          if (inputRef.current) {
-            inputRef.current.blur();
-          }
+          onSearchChange('');
+          if (inputRef.current) inputRef.current.blur();
         }
       };
-      
-      const handleClear = () => {
-        onSearchChange('');
-        setShowSuggestions(false);
-        if (inputRef.current) {
-          inputRef.current.focus();
-        }
-      };
-      
+
       return (
-        <div className="search-container">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-6 pointer-events-none">
+        <div className="search-container p-1 sm:p-1.5">
+          <div className="flex items-center">
+            <div className="flex-shrink-0 pl-4 pr-2">
               <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -472,14 +608,13 @@
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="search-input pl-12"
+              className="search-input flex-1 py-3 sm:py-4 px-2"
               autoComplete="off"
             />
             {searchQuery && (
               <button
-                onClick={handleClear}
-                className="absolute inset-y-0 right-0 flex items-center pr-6 text-gray-400 hover:text-gray-600 transition-colors"
-                title="検索をクリア"
+                onClick={() => onSearchChange('')}
+                className="flex-shrink-0 p-2 mr-2 text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -487,37 +622,34 @@
               </button>
             )}
           </div>
-          <div className="flex items-center justify-between mt-3 text-sm">
-            <div className="flex items-center gap-4">
-              <span className="text-gray-500">💡 複数キーワードでの絞り込み検索が可能です</span>
-              <div className="flex items-center gap-2">
-                <label className="flex items-center gap-1 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="searchMode"
-                    value="all"
-                    checked={searchMode === 'all'}
-                    onChange={(e) => onSearchModeChange(e.target.value)}
-                    className="text-blue-600"
-                  />
-                  <span className="text-gray-600 text-xs">全体検索</span>
-                </label>
-                <label className="flex items-center gap-1 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="searchMode"
-                    value="title-only"
-                    checked={searchMode === 'title-only'}
-                    onChange={(e) => onSearchModeChange(e.target.value)}
-                    className="text-blue-600"
-                  />
-                  <span className="text-gray-600 text-xs">タイトルのみ</span>
-                </label>
-              </div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 py-2 border-t border-gray-100">
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <input
+                  type="radio"
+                  name="searchMode"
+                  value="all"
+                  checked={searchMode === 'all'}
+                  onChange={(e) => onSearchModeChange(e.target.value)}
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-600 group-hover:text-gray-900">全体検索</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <input
+                  type="radio"
+                  name="searchMode"
+                  value="title-only"
+                  checked={searchMode === 'title-only'}
+                  onChange={(e) => onSearchModeChange(e.target.value)}
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-600 group-hover:text-gray-900">タイトルのみ</span>
+              </label>
             </div>
             {searchQuery && (
-              <span className="text-blue-600 font-medium">
-                「{searchQuery}」で{searchMode === 'title-only' ? 'タイトル' : '全体'}検索中
+              <span className="text-sm text-blue-600 font-medium">
+                「{searchQuery}」で検索中
               </span>
             )}
           </div>
@@ -525,132 +657,197 @@
       );
     };
 
-    const CategoryButton = ({ category, active, count, onClick, children, description }) => (
-      <button
-        onClick={() => onClick(category)}
-        className={`filter-button whitespace-nowrap ${active ? 'active' : ''}`}
-        title={description}
-      >
-        {children} <span className={`ml-2 px-2 py-1 rounded-full text-xs font-bold count-badge ${active ? 'bg-white bg-opacity-25 text-white' : 'bg-gray-100 text-gray-600'}`}>{count}</span>
-      </button>
-    );
+    // カテゴリーフィルターコンポーネント
+    const CategoryFilter = ({ selectedCategory, setSelectedCategory, counts }) => {
+      const categories = [
+        { key: 'view-all', label: 'すべて', icon: '📋', description: 'すべてのサービス' },
+        { key: 'all', label: '全共通', icon: '🎯', description: '8プラットフォーム共通' },
+        { key: 'multiple', label: '複数', icon: '🔗', description: '2プラットフォーム以上' },
+        { key: 'unique', label: 'ユニーク', icon: '💎', description: '1プラットフォーム限定' },
+      ];
 
-    const PlatformButton = ({ platform, active, count, onClick }) => (
-      <button
-        onClick={onClick}
-        className={`filter-button whitespace-nowrap ${active ? 'active' : ''}`}
-      >
-        {platform} <span className={`ml-2 px-2 py-1 rounded-full text-xs font-bold count-badge ${active ? 'bg-white bg-opacity-25 text-white' : 'bg-gray-100 text-gray-600'}`}>({count})</span>
-      </button>
-    );
+      return (
+        <div className="filter-section p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <span className="w-1 h-4 bg-blue-500 rounded-full"></span>
+              カテゴリーフィルター
+            </h3>
+          </div>
+          <div className="flex flex-wrap gap-2 sm:gap-3">
+            {categories.map(cat => (
+              <button
+                key={cat.key}
+                onClick={() => setSelectedCategory(cat.key)}
+                className={`filter-chip ${selectedCategory === cat.key ? 'active' : ''}`}
+                title={cat.description}
+              >
+                <span>{cat.icon}</span>
+                <span className="hidden sm:inline">{cat.label}</span>
+                <span className="count">{counts[cat.key] || 0}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    };
 
-    const PlatformBadge = ({ platform, service }) => {
-      const handlePlatformClick = () => {
-        const link = service.details[platform].link;
-        if (link) {
-          window.open(link, '_blank');
-        }
+    // プラットフォームフィルターコンポーネント
+    const PlatformFilter = ({ selectedPlatform, setSelectedPlatform, counts, platforms }) => {
+      const platformConfig = {
+        'zapier': { icon: '⚡', color: '#ff4a00' },
+        'IFTTT': { icon: '🔗', color: '#000000' },
+        'PowerAutomate': { icon: '🔄', color: '#0066ff' },
+        'n8n': { icon: '🛠️', color: '#ea4b71' },
+        'make': { icon: '🎯', color: '#6d4aff' },
+        'yoom': { icon: '💫', color: '#00c4cc' },
+        'dify': { icon: '🤖', color: '#1570ef' },
+        'anyflow': { icon: '🔌', color: '#10b981' }
       };
 
       return (
-        <span 
-          className={`platform-badge ${service.details[platform].link ? 'cursor-pointer hover:scale-105 hover:shadow-lg' : ''}`}
-          onClick={handlePlatformClick}
-          title={service.details[platform].link ? `${platform}でのサービスページを開く` : platform}
+        <div className="filter-section p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <span className="w-1 h-4 bg-purple-500 rounded-full"></span>
+              プラットフォームフィルター
+            </h3>
+            <span className="text-xs text-gray-500">{counts.totalUniqueServices || 0} 件</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setSelectedPlatform('all')}
+              className={`platform-chip ${selectedPlatform === 'all' ? 'active' : ''}`}
+            >
+              <span>🌐</span>
+              <span>すべて</span>
+            </button>
+            {platforms.map(platform => (
+              <button
+                key={platform}
+                onClick={() => setSelectedPlatform(platform)}
+                className={`platform-chip ${selectedPlatform === platform ? 'active' : ''}`}
+              >
+                <span>{(platformConfig[platform] && platformConfig[platform].icon) || '📱'}</span>
+                <span className="hidden sm:inline">{platform}</span>
+                <span className="text-xs opacity-75">({counts.platforms[platform] || 0})</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    };
+
+    // プラットフォームバッジコンポーネント
+    const PlatformBadge = ({ platform, service }) => {
+      const handleClick = () => {
+        const link = service.details[platform] && service.details[platform].link;
+        if (link) window.open(link, '_blank');
+      };
+
+      const platformClass = platform.toLowerCase().replace(/\s+/g, '');
+
+      return (
+        <span
+          className={`platform-badge ${platformClass}`}
+          onClick={handleClick}
+          title={(service.details[platform] && service.details[platform].link) ? `${platform}で開く` : platform}
         >
           {platform}
         </span>
       );
     };
 
+    // サービスカードコンポーネント
     const ServiceCard = ({ service }) => {
       const [isExpanded, setIsExpanded] = useState(false);
-      const imgUrl = service.details[service.platforms[0]].icon;
+      const firstPlatform = service.details[service.platforms[0]];
+      const imgUrl = firstPlatform && firstPlatform.icon;
 
       const handleGoogleSearch = () => {
-        const searchQuery = encodeURIComponent(service.title);
-        window.open(`https://www.google.com/search?q=${searchQuery}`, '_blank');
-      };
-
-      const toggleExpanded = () => {
-        setIsExpanded(!isExpanded);
+        window.open(`https://www.google.com/search?q=${encodeURIComponent(service.title)}`, '_blank');
       };
 
       return (
-        <div className="card-gradient overflow-hidden">
-          <div className="p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold flex items-center gap-3 mb-3">
-                  {imgUrl && (
-                    <div className="w-8 h-8 rounded-lg overflow-hidden bg-white p-1 shadow-sm">
-                      <img src={imgUrl} alt="icon" className="w-full h-full object-contain" />
-                    </div>
-                  )}
-                  <span className="text-gray-800">{service.title}</span>
+        <div className="service-card animate-fade-in">
+          <div className="p-4 sm:p-6">
+            {/* ヘッダー */}
+            <div className="flex items-start gap-3 sm:gap-4 mb-4">
+              {imgUrl && (
+                <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden bg-gray-50 p-1.5 border border-gray-100">
+                  <img src={imgUrl} alt="" className="w-full h-full object-contain" loading="lazy" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
+                    {service.title}
+                  </h3>
                   <button
                     onClick={handleGoogleSearch}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-all duration-200 text-gray-500 hover:text-gray-700"
-                    title="Googleで検索"
+                    className="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+                    title="Google検索"
                   >
                     <i className="fa-solid fa-magnifying-glass text-sm"></i>
                   </button>
-                </h3>
-                <div className="flex gap-2 flex-wrap mb-3">
-                  {service.platforms.map(platform => (
-                    <PlatformBadge key={platform} platform={platform} service={service} />
-                  ))}
                 </div>
-                <div className="flex items-center gap-4 text-sm text-gray-600">
+                <div className="flex items-center gap-2 mt-1 text-sm text-gray-500">
                   <span className="flex items-center gap-1">
-                    <i className="fa-solid fa-chart-bar"></i>
-                    {service.count}プラットフォーム対応
+                    <i className="fa-solid fa-layer-group text-xs"></i>
+                    {service.count} プラットフォーム
                   </span>
-                  <button
-                    onClick={toggleExpanded}
-                    className="flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
-                  >
-                    <i className={`fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
-                    {isExpanded ? '詳細を閉じる' : '詳細を見る'}
-                  </button>
                 </div>
               </div>
             </div>
 
+            {/* プラットフォームバッジ */}
+            <div className="flex flex-wrap gap-1.5 mb-4">
+              {service.platforms.map(platform => (
+                <PlatformBadge key={platform} platform={platform} service={service} />
+              ))}
+            </div>
+
+            {/* 詳細トグル */}
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all"
+            >
+              <span>{isExpanded ? '詳細を閉じる' : '詳細を見る'}</span>
+              <i className={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'} text-xs transition-transform`}></i>
+            </button>
+
+            {/* 詳細パネル */}
             {isExpanded && (
-              <div className="space-y-4 animate-fadeIn">
+              <div className="mt-4 space-y-3 animate-slide-up">
                 {service.platforms.map(platform => (
-                  <div key={platform} className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
-                    <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                      <span>{platform}</span>
-                      {service.details[platform].link && (
+                  <div key={platform} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-gray-800 text-sm">{platform}</h4>
+                      {service.details[platform] && service.details[platform].link && (
                         <a
                           href={service.details[platform].link}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1 text-blue-500 hover:text-blue-700 transition-colors"
-                          title="公式ページを開く"
+                          className="text-blue-500 hover:text-blue-700 text-xs"
                         >
-                          <i className="fa-solid fa-up-right-from-square text-sm"></i>
+                          <i className="fa-solid fa-external-link-alt"></i>
                         </a>
                       )}
-                    </h4>
-                    {service.details[platform].title !== service.title && (
-                      <div className="mb-2">
-                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                          {platform}での名称: {service.details[platform].title}
-                        </span>
-                      </div>
+                    </div>
+                    {service.details[platform] && service.details[platform].title !== service.title && (
+                      <p className="text-xs text-gray-500 mb-2">
+                        別名: {service.details[platform].title}
+                      </p>
                     )}
-                    <p className="text-sm text-gray-600 mb-3 leading-relaxed" translate="yes">
-                      {service.details[platform].description}
-                    </p>
-                    {service.details[platform].tag && (
-                      <div className="flex items-center gap-2">
-                        <span className="px-3 py-1 bg-white text-gray-700 text-xs font-medium rounded-full shadow-sm">
-                          🏷️ {service.details[platform].tag}
-                        </span>
-                      </div>
+                    {service.details[platform] && service.details[platform].description && (
+                      <p className="text-sm text-gray-600 leading-relaxed" translate="yes">
+                        {service.details[platform].description}
+                      </p>
+                    )}
+                    {service.details[platform] && service.details[platform].tag && (
+                      <span className="inline-block mt-2 px-2 py-1 bg-white text-gray-600 text-xs rounded-full border border-gray-200">
+                        🏷️ {service.details[platform].tag}
+                      </span>
                     )}
                   </div>
                 ))}
@@ -661,66 +858,60 @@
       );
     };
 
-    // ScrollTopButton コンポーネントを追加
+    // 結果なしコンポーネント
+    const NoResults = ({ searchQuery }) => (
+      <div className="col-span-full">
+        <div className="no-results-container text-center py-16 px-8">
+          <div className="text-5xl mb-4">🔍</div>
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">
+            {searchQuery ? '検索条件に一致するサービスがありません' : '該当するサービスがありません'}
+          </h3>
+          <p className="text-sm text-gray-500">
+            フィルター条件を変更してお試しください
+          </p>
+        </div>
+      </div>
+    );
+
+    // スクロールトップボタン
     const ScrollTopButton = () => {
       const [isVisible, setIsVisible] = useState(false);
 
-      // スクロール位置を監視
       useEffect(() => {
         const toggleVisibility = () => {
-          if (window.pageYOffset > 300) {
-            setIsVisible(true);
-          } else {
-            setIsVisible(false);
-          }
+          setIsVisible(window.pageYOffset > 400);
         };
-
         window.addEventListener('scroll', toggleVisibility);
-
-        return () => {
-          window.removeEventListener('scroll', toggleVisibility);
-        };
+        return () => window.removeEventListener('scroll', toggleVisibility);
       }, []);
 
-      // トップへスクロール
       const scrollToTop = () => {
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth'
-        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       };
+
+      if (!isVisible) return null;
 
       return (
         <button
-          className={`fixed right-6 bottom-6 p-4 rounded-full scroll-to-top text-white shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
-            }`}
+          className="scroll-top-btn animate-fade-in"
           onClick={scrollToTop}
-          aria-label="トップへスクロール"
+          aria-label="トップへ戻る"
         >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M5 10l7-7m0 0l7 7m-7-7v18"
-            />
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
           </svg>
         </button>
       );
     };
 
+    // メインアプリ
     const App = () => {
       const [selectedCategory, setSelectedCategory] = useState('view-all');
       const [selectedPlatform, setSelectedPlatform] = useState('all');
       const [searchInput, setSearchInput] = useState('');
       const [searchMode, setSearchMode] = useState('all');
       const [filteredServices, setFilteredServices] = useState([]);
-      const [isLoading, setIsLoading] = useState(false);
+      const [isLoading, setIsLoading] = useState(true);
       const [counts, setCounts] = useState({
         'view-all': 0,
         all: 0,
@@ -730,27 +921,25 @@
         totalUniqueServices: 0
       });
 
-      // 検索クエリをデバウンス
       const debouncedSearchQuery = useDebounce(searchInput, 300);
+
       const worker = useMemo(() => {
         const w = new Worker(URL.createObjectURL(new Blob([searchWorkerCode], { type: 'text/javascript' })));
-
         w.onmessage = (e) => {
-          const { services, counts } = e.data;
-          setFilteredServices(services);
-          setCounts(counts);
+          setFilteredServices(e.data.services);
+          setCounts(e.data.counts);
+          setIsLoading(false);
         };
-
         return w;
       }, []);
 
       const allServices = useMemo(() => {
         const platformNames = Object.keys(data);
-        const serviceCounts = new Set();
+        const serviceCounts = {};
 
         platformNames.forEach(platform => {
           data[platform].forEach(service => {
-            const title = formatedServiceTitle(service.title)
+            const title = formatedServiceTitle(service.title);
             if (!serviceCounts[title]) {
               serviceCounts[title] = {
                 count: 1,
@@ -772,7 +961,10 @@
         }));
       }, []);
 
-      // 検索処理のデバウンスを適用
+      const totalServices = useMemo(() => {
+        return Object.values(data).reduce((sum, arr) => sum + arr.length, 0);
+      }, []);
+
       useEffect(() => {
         setIsLoading(true);
         worker.postMessage({
@@ -782,28 +974,17 @@
           categoryFilter: selectedCategory,
           searchMode: searchMode
         });
-        
-        const timer = setTimeout(() => {
-          setIsLoading(false);
-        }, 100);
-        
-        return () => clearTimeout(timer);
       }, [debouncedSearchQuery, selectedPlatform, selectedCategory, searchMode, allServices]);
+
+      const platforms = Object.keys(data);
 
       return (
         <div className="min-h-screen" translate="no">
-          <div className="max-w-7xl mx-auto p-6">
-            <div className="text-center mb-12">
-              <h1 className="header-title">
-                iPaaS連携サービス比較ツール
-              </h1>
-              <p className="text-gray-600 text-lg font-light">
-                主要iPaaSプラットフォームの連携サービス・コネクターを横断検索・比較
-              </p>
-            </div>
+          <Header totalServices={totalServices} />
 
-            {/* 検索バー */}
-            <div className="mb-8">
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 sm:-mt-8 relative z-10 pb-12">
+            {/* 検索セクション */}
+            <div className="mb-6">
               <SearchBar
                 searchQuery={searchInput}
                 onSearchChange={setSearchInput}
@@ -812,130 +993,62 @@
               />
             </div>
 
-            {/* カテゴリーフィルター */}
-            <div className="mb-8">
-              <div className="text-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-700 mb-2">📊 カテゴリー別フィルター</h3>
-                <p className="text-sm text-gray-500">プラットフォーム対応状況で絞り込み</p>
-              </div>
-              <div className="flex justify-center gap-4 overflow-x-auto pb-2">
-                <CategoryButton
-                  category="view-all"
-                  active={selectedCategory === 'view-all'}
-                  count={counts['view-all']}
-                  onClick={setSelectedCategory}
-                  description="すべてのサービス"
-                >
-                  🌟 すべて
-                </CategoryButton>
-                <CategoryButton
-                  category="all"
-                  active={selectedCategory === 'all'}
-                  count={counts.all}
-                  onClick={setSelectedCategory}
-                  description="7つすべてのプラットフォームで利用可能"
-                >
-                  🎯 全プラットフォーム共通
-                </CategoryButton>
-                <CategoryButton
-                  category="multiple"
-                  active={selectedCategory === 'multiple'}
-                  count={counts.multiple}
-                  onClick={setSelectedCategory}
-                  description="2-6つのプラットフォームで利用可能"
-                >
-                  🔗 複数プラットフォーム
-                </CategoryButton>
-                <CategoryButton
-                  category="unique"
-                  active={selectedCategory === 'unique'}
-                  count={counts.unique}
-                  onClick={setSelectedCategory}
-                  description="特定のプラットフォーム限定"
-                >
-                  💎 ユニーク
-                </CategoryButton>
-              </div>
+            {/* フィルターセクション */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+              <CategoryFilter
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                counts={counts}
+              />
+              <PlatformFilter
+                selectedPlatform={selectedPlatform}
+                setSelectedPlatform={setSelectedPlatform}
+                counts={counts}
+                platforms={platforms}
+              />
             </div>
 
-            {/* プラットフォームフィルター */}
-            <div className="mb-8">
-              <div className="text-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-700 mb-2">🚀 プラットフォーム別フィルター</h3>
-                <p className="text-sm text-gray-500">特定のプラットフォームのサービスのみ表示</p>
+            {/* 結果ヘッダー */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+              <div className="flex items-center gap-3">
+                {isLoading && <div className="loading-spinner"></div>}
+                <span className="text-sm text-gray-600">
+                  {isLoading ? '検索中...' : `${filteredServices.length.toLocaleString()} 件のサービス`}
+                </span>
               </div>
-              <div className="flex flex-wrap gap-3 justify-center">
-                <PlatformButton
-                  platform="🌐 all"
-                  active={selectedPlatform === 'all'}
-                  count={counts.totalUniqueServices}
-                  onClick={() => setSelectedPlatform('all')}
-                />
-                {Object.keys(data).map(platform => {
-                  const platformIcons = {
-                    'zapier': '⚡',
-                    'IFTTT': '🔗',
-                    'PowerAutomate': '🔄',
-                    'n8n': '🛠️',
-                    'make': '🎯',
-                    'yoom': '💫',
-                    'dify': '🤖',
-                    'anyflow': '🔌'
-                  };
-                  return (
-                    <PlatformButton
-                      key={platform}
-                      platform={`${platformIcons[platform] || '📱'} ${platform}`}
-                      active={selectedPlatform === platform}
-                      count={counts.platforms[platform] || 0}
-                      onClick={() => setSelectedPlatform(platform)}
-                    />
-                  );
-                })}
-              </div>
+              {filteredServices.length > 2000 && (
+                <span className="text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
+                  ※ 表示は2,000件まで
+                </span>
+              )}
             </div>
 
-            {(filteredServices.length > 0 || isLoading) && (
-              <div className="w-full flex justify-between items-center mb-4">
-                <div className="text-sm text-gray-600 flex items-center gap-2">
-                  {isLoading && <div className="loading-spinner"></div>}
-                  {isLoading ? '検索中...' : `${filteredServices.length} 件の結果`}
-                </div>
-                <div className="results-count text-sm">
-                  📊 {filteredServices.length} 件{filteredServices.length > 2000 ? "中 2000件表示" : ""}
-                </div>
-              </div>
-            )}
-
-            {/* サービス一覧 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* サービスグリッド */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
               {filteredServices.length > 0 ? (
-                filteredServices.slice(0,2000).map(service => (
+                filteredServices.slice(0, 2000).map(service => (
                   <ServiceCard key={service.title} service={service} />
                 ))
               ) : (
-                <div className="col-span-full text-center py-20">
-                  <div className="no-results p-8 max-w-md mx-auto rounded-xl">
-                    <div className="text-6xl mb-4">🔍</div>
-                    <h3 className="text-lg font-semibold mb-2">
-                      {debouncedSearchQuery
-                        ? "検索条件に一致するサービスはありません"
-                        : "該当するサービスはありません"}
-                    </h3>
-                    <p className="text-sm">
-                      フィルターを調整して再度お試しください
-                    </p>
-                  </div>
-                </div>
+                !isLoading && <NoResults searchQuery={debouncedSearchQuery} />
               )}
             </div>
-            <ScrollTopButton />
-          </div>
+          </main>
+
+          <ScrollTopButton />
+
+          {/* フッター */}
+          <footer className="bg-gray-900 text-gray-400 py-8 mt-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm">
+              <p>iPaaS連携サービス比較ツール</p>
+              <p className="mt-1 text-gray-500">Zapier, IFTTT, Make, Power Automate, n8n, Yoom, Dify, Anyflow</p>
+            </div>
+          </footer>
         </div>
       );
     };
 
-    // JSONデータの読み込みを試み、その後Reactアプリを起動
+    // アプリ起動
     (async () => {
       const jsonData = await window.PlatformDataLoader.loadFromJson();
       if (jsonData) {
