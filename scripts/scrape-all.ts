@@ -7,7 +7,6 @@ import { YoomScraper } from "./scrapers/yoom.js";
 import { DifyScraper } from "./scrapers/dify.js";
 import { AnyflowScraper } from "./scrapers/anyflow.js";
 import { initDatabase, seedNormalizationRules, saveDatabase } from "./db/init.js";
-import { exportToJson } from "./db/export.js";
 import type { ScrapeResult } from "./scrapers/types.js";
 
 async function main() {
@@ -57,10 +56,6 @@ async function main() {
   }
 
   console.log(`\nTotal: ${totalServices} services`);
-
-  // JSONをエクスポート
-  console.log("\nExporting to JSON...");
-  await exportToJson();
 
   if (hasErrors) {
     console.log("\n⚠️ Some scrapers failed. Check the errors above.");
