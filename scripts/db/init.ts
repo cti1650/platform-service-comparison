@@ -4,7 +4,7 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DB_PATH = join(__dirname, "../../data/services.db");
+const DB_PATH = join(__dirname, "../../public/services.db");
 const SCHEMA_PATH = join(__dirname, "schema.sql");
 
 let sqlPromise: Promise<typeof import("sql.js")> | null = null;

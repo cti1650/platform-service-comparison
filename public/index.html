@@ -363,194 +363,19 @@
       box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
     }
   </style>
-  <!-- プラットフォームデータのフォールバック用 -->
-  <script src="./platforms/make.js"></script>
-  <script src="./platforms/ifttt.js"></script>
-  <script src="./platforms/zapier.js"></script>
-  <script src="./platforms/powerAutomate.js"></script>
-  <script src="./platforms/n8n.js"></script>
-  <script src="./platforms/yoom.js"></script>
-  <script src="./platforms/dify.js"></script>
-  <script src="./platforms/anyflow.js"></script>
-  <script src="./js/serviceNameNormalizer.js"></script>
-  <script src="./js/normalizationTest.js"></script>
-
-  <!-- データローダー -->
-  <script>
-    window.PlatformDataLoader = {
-      data: null,
-      loaded: false,
-
-      async loadFromJson() {
-        try {
-          const response = await fetch('./data.json');
-          if (!response.ok) throw new Error('JSON not found');
-          const json = await response.json();
-
-          this.data = {
-            zapier: json.platforms.zapier || [],
-            IFTTT: json.platforms.ifttt || [],
-            PowerAutomate: json.platforms.powerAutomate || [],
-            n8n: json.platforms.n8n || [],
-            make: json.platforms.make || [],
-            yoom: json.platforms.yoom || [],
-            dify: json.platforms.dify || [],
-            anyflow: json.platforms.anyflow || []
-          };
-          this.loaded = true;
-          console.log('Loaded data from JSON:', Object.keys(this.data).map(k => `${k}: ${this.data[k].length}`).join(', '));
-          return this.data;
-        } catch (e) {
-          console.log('JSON not available, using legacy JS files');
-          return null;
-        }
-      },
-
-      getData() {
-        if (this.loaded && this.data) {
-          return this.data;
-        }
-        return {
-          zapier: typeof zapierServices !== 'undefined' ? zapierServices : [],
-          IFTTT: typeof iftttServices !== 'undefined' ? iftttServices : [],
-          PowerAutomate: typeof powerAutomateServices !== 'undefined' ? powerAutomateServices : [],
-          n8n: typeof n8nServices !== 'undefined' ? n8nServices : [],
-          make: typeof makeServices !== 'undefined' ? makeServices : [],
-          yoom: typeof yoomServices !== 'undefined' ? yoomServices : [],
-          dify: typeof difyServices !== 'undefined' ? difyServices : [],
-          anyflow: typeof anyflowServices !== 'undefined' ? anyflowServices : []
-        };
-      }
-    };
-  </script>
 </head>
 
 <body>
   <div id="root"></div>
 
   <script type="text/babel">
-    const searchWorkerCode = `
-      const hasSearchQueryKeyword = (text, query) => {
-        if (!text) return false;
-        const targetText = text.toLowerCase();
-        const queryKeywords = query.split(" ");
-        return queryKeywords.every(keyword=>{
-          return targetText.includes(keyword)
-        });
-      };
-      self.onmessage = function(e) {
-        const { services, searchQuery, platformFilter, categoryFilter, searchMode } = e.data;
-
-        const filteredServices = services.filter(service => {
-          if (categoryFilter !== 'view-all') {
-            const platformCount = service.platforms.length;
-            const totalPlatforms = 8;
-
-            if (categoryFilter === 'all' && platformCount !== totalPlatforms) return false;
-            if (categoryFilter === 'multiple' && platformCount < 2) return false;
-            if (categoryFilter === 'unique' && platformCount !== 1) return false;
-          }
-
-          if (platformFilter && platformFilter !== 'all') {
-            if (!service.platforms.includes(platformFilter)) return false;
-          }
-
-          if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-
-            if (searchMode === 'title-only') {
-              return hasSearchQueryKeyword(service.title, query);
-            } else {
-              return service.platforms.some(platform => {
-                const details = service.details[platform];
-                const targetText = [details.title, details.description, details.tag].filter(Boolean).join('\\n');
-                return hasSearchQueryKeyword(targetText, query);
-              }) || hasSearchQueryKeyword(service.title, query);
-            }
-          }
-
-          return true;
-        });
-
-        const counts = {
-          'view-all': 0,
-          all: 0,
-          multiple: 0,
-          unique: 0,
-          platforms: {},
-          totalUniqueServices: 0
-        };
-
-        const searchFilteredServices = services.filter(service => {
-          if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-
-            if (searchMode === 'title-only') {
-              return hasSearchQueryKeyword(service.title, query);
-            } else {
-              return service.platforms.some(platform => {
-                const details = service.details[platform];
-                const targetText = [details.title, details.description, details.tag].filter(Boolean).join('\\n');
-                return hasSearchQueryKeyword(targetText, query);
-              }) || hasSearchQueryKeyword(service.title, query);
-            }
-          }
-          return true;
-        });
-
-        const categoryCountServices = searchFilteredServices.filter(service => {
-          if (platformFilter && platformFilter !== 'all') {
-            if (!service.platforms.includes(platformFilter)) return false;
-          }
-          return true;
-        });
-
-        categoryCountServices.forEach(service => {
-          const platformCount = service.platforms.length;
-          const totalPlatforms = 8;
-
-          counts['view-all']++;
-
-          if (platformCount === totalPlatforms) counts.all++;
-          if (platformCount >= 2) counts.multiple++;
-          if (platformCount === 1) counts.unique++;
-        });
-
-        const platformCountServices = searchFilteredServices.filter(service => {
-          if (categoryFilter !== 'view-all') {
-            const platformCount = service.platforms.length;
-            const totalPlatforms = 8;
-
-            if (categoryFilter === 'all' && platformCount !== totalPlatforms) return false;
-            if (categoryFilter === 'multiple' && platformCount < 2) return false;
-            if (categoryFilter === 'unique' && platformCount !== 1) return false;
-          }
-          return true;
-        });
-
-        platformCountServices.forEach(service => {
-          service.platforms.forEach(platform => {
-            counts.platforms[platform] = (counts.platforms[platform] || 0) + 1;
-          });
-        });
-
-        counts.totalUniqueServices = platformCountServices.length;
-
-        self.postMessage({
-          services: filteredServices,
-          counts
-        });
-      };
-    `;
-
     const { useState, useMemo, useEffect, useCallback, useRef } = React;
 
-    let data = window.PlatformDataLoader.getData();
+    // プラットフォーム定義
+    const PLATFORMS = ['zapier', 'ifttt', 'powerAutomate', 'n8n', 'make', 'yoom', 'dify', 'anyflow'];
 
-    const formatedServiceTitle = (title) => {
-      if (!title) return title;
-      return window.ServiceNameNormalizer.normalizeServiceName(title);
-    }
+    // DB Worker
+    const dbWorker = new Worker('/js/dbWorker.js');
 
     const useDebounce = (value, delay) => {
       const [debouncedValue, setDebouncedValue] = useState(value);
@@ -722,7 +547,7 @@
               <span>🌐</span>
               <span>すべて</span>
             </button>
-            {platforms.map(platform => (
+            {[...platforms].sort((a, b) => (counts.platforms[b] || 0) - (counts.platforms[a] || 0)).map(platform => (
               <button
                 key={platform}
                 onClick={() => setSelectedPlatform(platform)}
@@ -912,6 +737,9 @@
       const [searchMode, setSearchMode] = useState('all');
       const [filteredServices, setFilteredServices] = useState([]);
       const [isLoading, setIsLoading] = useState(true);
+      const [isDbReady, setIsDbReady] = useState(false);
+      const [totalServices, setTotalServices] = useState(0);
+      const [dbError, setDbError] = useState(null);
       const [counts, setCounts] = useState({
         'view-all': 0,
         all: 0,
@@ -923,60 +751,103 @@
 
       const debouncedSearchQuery = useDebounce(searchInput, 300);
 
-      const worker = useMemo(() => {
-        const w = new Worker(URL.createObjectURL(new Blob([searchWorkerCode], { type: 'text/javascript' })));
-        w.onmessage = (e) => {
-          setFilteredServices(e.data.services);
-          setCounts(e.data.counts);
+      // DB Worker メッセージハンドラ
+      useEffect(() => {
+        dbWorker.onmessage = (e) => {
+          console.log('[App] Worker message received:', e.data);
+          const { type, result, success, error } = e.data;
+
+          if (!success) {
+            console.error('DB Worker error:', error);
+            setDbError(error);
+            setIsLoading(false);
+            return;
+          }
+
+          if (type === 'init') {
+            console.log('[App] DB initialized, totalServices:', result.totalServices);
+            setTotalServices(result.totalServices);
+            setIsDbReady(true);
+            // init完了後、すぐに初回検索を実行
+            dbWorker.postMessage({
+              type: 'search',
+              payload: {
+                query: '',
+                platform: 'all',
+                category: 'view-all',
+                searchMode: 'all',
+                limit: 2000,
+                offset: 0
+              }
+            });
+          } else if (type === 'search') {
+            console.log('[App] Search complete, services:', result.services.length);
+            setFilteredServices(result.services);
+            setCounts(result.counts);
+            setIsLoading(false);
+          }
+        };
+
+        dbWorker.onerror = (e) => {
+          console.error('DB Worker error:', e);
+          setDbError(e.message || 'データベースの読み込みに失敗しました');
           setIsLoading(false);
         };
-        return w;
+
+        // DB初期化リクエスト
+        console.log('[App] Sending init request to worker');
+        dbWorker.postMessage({ type: 'init' });
       }, []);
 
-      const allServices = useMemo(() => {
-        const platformNames = Object.keys(data);
-        const serviceCounts = {};
-
-        platformNames.forEach(platform => {
-          data[platform].forEach(service => {
-            const title = formatedServiceTitle(service.title);
-            if (!serviceCounts[title]) {
-              serviceCounts[title] = {
-                count: 1,
-                platforms: [platform],
-                details: { [platform]: service }
-              };
-            } else {
-              if (serviceCounts[title].platforms.includes(platform)) return;
-              serviceCounts[title].count++;
-              serviceCounts[title].platforms.push(platform);
-              serviceCounts[title].details[platform] = service;
-            }
-          });
-        });
-
-        return Object.entries(serviceCounts).map(([title, info]) => ({
-          title,
-          ...info
-        }));
-      }, []);
-
-      const totalServices = useMemo(() => {
-        return Object.values(data).reduce((sum, arr) => sum + arr.length, 0);
-      }, []);
-
+      // 検索リクエスト
       useEffect(() => {
-        setIsLoading(true);
-        worker.postMessage({
-          services: allServices,
-          searchQuery: debouncedSearchQuery,
-          platformFilter: selectedPlatform,
-          categoryFilter: selectedCategory,
-          searchMode: searchMode
-        });
-      }, [debouncedSearchQuery, selectedPlatform, selectedCategory, searchMode, allServices]);
+        if (!isDbReady) return;
 
-      const platforms = Object.keys(data);
+        setIsLoading(true);
+        dbWorker.postMessage({
+          type: 'search',
+          payload: {
+            query: debouncedSearchQuery,
+            platform: selectedPlatform,
+            category: selectedCategory,
+            searchMode: searchMode,
+            limit: 2000,
+            offset: 0
+          }
+        });
+      }, [debouncedSearchQuery, selectedPlatform, selectedCategory, searchMode, isDbReady]);
+
+      // エラー表示
+      if (dbError) {
+        return (
+          <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="text-center p-8">
+              <div className="text-red-500 text-6xl mb-4">⚠️</div>
+              <h2 className="text-xl font-bold text-gray-800 mb-2">データベースの読み込みエラー</h2>
+              <p className="text-gray-600 mb-4">{dbError}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              >
+                再読み込み
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      // 初期ローディング
+      if (!isDbReady) {
+        return (
+          <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="text-center">
+              <div className="loading-spinner w-12 h-12 mx-auto mb-4" style={{borderWidth: '3px'}}></div>
+              <p className="text-gray-600">データベースを読み込み中...</p>
+              <p className="text-sm text-gray-400 mt-2">初回は数秒かかる場合があります</p>
+            </div>
+          </div>
+        );
+      }
 
       return (
         <div className="min-h-screen" translate="no">
@@ -1004,7 +875,7 @@
                 selectedPlatform={selectedPlatform}
                 setSelectedPlatform={setSelectedPlatform}
                 counts={counts}
-                platforms={platforms}
+                platforms={PLATFORMS}
               />
             </div>
 
@@ -1016,7 +887,7 @@
                   {isLoading ? '検索中...' : `${filteredServices.length.toLocaleString()} 件のサービス`}
                 </span>
               </div>
-              {filteredServices.length > 2000 && (
+              {filteredServices.length >= 2000 && (
                 <span className="text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
                   ※ 表示は2,000件まで
                 </span>
@@ -1026,7 +897,7 @@
             {/* サービスグリッド */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
               {filteredServices.length > 0 ? (
-                filteredServices.slice(0, 2000).map(service => (
+                filteredServices.map(service => (
                   <ServiceCard key={service.title} service={service} />
                 ))
               ) : (
@@ -1049,13 +920,7 @@
     };
 
     // アプリ起動
-    (async () => {
-      const jsonData = await window.PlatformDataLoader.loadFromJson();
-      if (jsonData) {
-        data = jsonData;
-      }
-      ReactDOM.render(<App />, document.getElementById('root'));
-    })();
+    ReactDOM.render(<App />, document.getElementById('root'));
   </script>
 </body>
 
