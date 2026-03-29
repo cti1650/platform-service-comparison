@@ -94,6 +94,7 @@ const NORMALIZATION_RULES = [
   { pattern: "Anthropic (Claude)", normalized_name: "Anthropic Claude", priority: 10 },
   { pattern: "Claude", normalized_name: "Anthropic Claude", priority: 5 },
   { pattern: "OpenAI (ChatGPT, Sora, DALL-E, Whisper)", normalized_name: "OpenAI", priority: 10 },
+  { pattern: "Chatgpt", normalized_name: "ChatGPT", priority: 10 },
 
   // LINE系
   { pattern: "LINE公式アカウント", normalized_name: "LINE Official Account", priority: 10 },
