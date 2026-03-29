@@ -62,6 +62,11 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
+          # SQLiteの件数を取得
+          TOTAL=$(sqlite3 public/services.db "SELECT COUNT(*) FROM services")
+          NORMALIZED=$(sqlite3 public/services.db "SELECT COUNT(DISTINCT title) FROM normalized_services")
+          echo "Total services: $TOTAL, Normalized: $NORMALIZED"
+
           # データベースをコミット
           git add public/services.db
 
@@ -69,7 +74,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "chore: update scraped data $(date +'%Y-%m-%d')"
+            git commit -m "chore: update scraped data $(date +'%Y-%m-%d') [$TOTAL services, $NORMALIZED normalized]"
             git push
           fi
 
