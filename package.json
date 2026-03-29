@@ -6,7 +6,18 @@
   "scripts": {
     "dev": "vercel dev",
     "build": "echo 'Static site - no build needed'",
-    "start": "vercel --prod"
+    "start": "vercel --prod",
+    "scrape": "npx tsx scripts/scrape-all.ts",
+    "scrape:zapier": "npx tsx scripts/scrapers/zapier.ts",
+    "scrape:ifttt": "npx tsx scripts/scrapers/ifttt.ts",
+    "scrape:make": "npx tsx scripts/scrapers/make.ts",
+    "scrape:powerautomate": "npx tsx scripts/scrapers/powerAutomate.ts",
+    "scrape:n8n": "npx tsx scripts/scrapers/n8n.ts",
+    "scrape:yoom": "npx tsx scripts/scrapers/yoom.ts",
+    "scrape:dify": "npx tsx scripts/scrapers/dify.ts",
+    "scrape:anyflow": "npx tsx scripts/scrapers/anyflow.ts",
+    "db:init": "npx tsx scripts/db/init.ts",
+    "db:export": "npx tsx scripts/db/export.ts"
   },
   "keywords": [
     "platform",
@@ -18,6 +29,12 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "vercel": "^34.0.0"
+    "vercel": "^34.0.0",
+    "typescript": "^5.4.0",
+    "tsx": "^4.7.0",
+    "playwright": "^1.42.0",
+    "sql.js": "^1.10.0",
+    "@types/sql.js": "^1.4.9",
+    "@types/node": "^20.11.0"
   }
 }
