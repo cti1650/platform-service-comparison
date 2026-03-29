@@ -22,6 +22,9 @@ on:
           - dify
           - anyflow
 
+permissions:
+  contents: write
+
 jobs:
   scrape:
     runs-on: ubuntu-latest
