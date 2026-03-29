@@ -67,7 +67,7 @@ jobs:
           git config --local user.name "github-actions[bot]"
 
           # SQLiteの件数を取得
-          TOTAL=$(sqlite3 public/services.db "SELECT COUNT(*) FROM services")
+          TOTAL=$(sqlite3 public/services.db "SELECT COUNT(*) FROM raw_services")
           NORMALIZED=$(sqlite3 public/services.db "SELECT COUNT(DISTINCT title) FROM normalized_services")
           echo "Total services: $TOTAL, Normalized: $NORMALIZED"
 
