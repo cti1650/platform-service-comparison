@@ -16,8 +16,7 @@
     "scrape:yoom": "npx tsx scripts/scrapers/yoom.ts",
     "scrape:dify": "npx tsx scripts/scrapers/dify.ts",
     "scrape:anyflow": "npx tsx scripts/scrapers/anyflow.ts",
-    "db:init": "npx tsx scripts/db/init.ts",
-    "db:export": "npx tsx scripts/db/export.ts"
+    "db:init": "npx tsx scripts/db/init.ts"
   },
   "keywords": [
     "platform",

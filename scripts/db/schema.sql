@@ -53,7 +53,34 @@ SELECT
   r.scraped_at
 FROM raw_services r;
 
+-- グループ化済みサービスビュー（タイトルごとにプラットフォーム数を集計）
+CREATE VIEW IF NOT EXISTS grouped_services AS
+SELECT
+  title,
+  COUNT(DISTINCT platform) as platform_count,
+  GROUP_CONCAT(DISTINCT platform) as platforms
+FROM normalized_services
+GROUP BY title;
+
+-- カテゴリ別件数ビュー（プラットフォーム数を動的に取得）
+CREATE VIEW IF NOT EXISTS category_counts AS
+SELECT
+  COUNT(*) as view_all,
+  SUM(CASE WHEN platform_count = (SELECT COUNT(DISTINCT platform) FROM raw_services) THEN 1 ELSE 0 END) as all_platforms,
+  SUM(CASE WHEN platform_count >= 2 THEN 1 ELSE 0 END) as multiple,
+  SUM(CASE WHEN platform_count = 1 THEN 1 ELSE 0 END) as unique_only
+FROM grouped_services;
+
+-- プラットフォーム別件数ビュー
+CREATE VIEW IF NOT EXISTS platform_counts AS
+SELECT
+  platform,
+  COUNT(DISTINCT title) as service_count
+FROM normalized_services
+GROUP BY platform;
+
 -- インデックス
 CREATE INDEX IF NOT EXISTS idx_raw_services_platform ON raw_services(platform);
 CREATE INDEX IF NOT EXISTS idx_raw_services_title ON raw_services(title);
 CREATE INDEX IF NOT EXISTS idx_normalization_rules_pattern ON normalization_rules(pattern);
+CREATE INDEX IF NOT EXISTS idx_raw_services_platform_title ON raw_services(platform, title);

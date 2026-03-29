@@ -54,16 +54,13 @@ jobs:
         if: ${{ github.event.inputs.platform != 'all' && github.event_name != 'schedule' }}
         run: npm run scrape:${{ github.event.inputs.platform }}
 
-      - name: Export to JSON
-        run: npm run db:export
-
       - name: Commit and push changes
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
-          # データベースとJSONをコミット
-          git add data/services.db public/data.json
+          # データベースをコミット
+          git add public/services.db
 
           # 変更がある場合のみコミット
           if git diff --staged --quiet; then
@@ -77,7 +74,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: scrape-results
-          path: |
-            data/services.db
-            public/data.json
+          path: public/services.db
           retention-days: 7
