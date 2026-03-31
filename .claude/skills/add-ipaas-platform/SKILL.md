@@ -1,21 +1,17 @@
-# add-ipaas-platform
+---
+name: add-ipaas-platform
+description: |
+  新しいiPaaSプラットフォームをプロジェクトに追加するスキル。
+  トリガー条件: (1) 新しいiPaaSプラットフォームを追加したい (2) 〇〇というプラットフォームを追加して (3) プラットフォームを増やしたい
+---
 
-新しいiPaaSプラットフォームを追加するスキル。
-
-## トリガー条件
-- 「新しいiPaaSプラットフォームを追加したい」
-- 「〇〇というプラットフォームを追加して」
-- 「プラットフォームを増やしたい」
+# 新規iPaaSプラットフォーム追加
 
 ## 更新が必要なファイル（5箇所）
 
 ### 1. `scripts/scrapers/types.ts` - 型定義
 ```typescript
-export type PlatformName =
-  | "zapier"
-  | "ifttt"
-  // ... 既存のプラットフォーム
-  | "newplatform";  // 追加
+export type PlatformName = "zapier" | ... | "newplatform";
 ```
 
 ### 2. `scripts/scrapers/[platform].ts` - スクレイパー作成
@@ -28,18 +24,18 @@ export class NewPlatformScraper extends BaseScraper {
   readonly url = "https://example.com/integrations";
 
   protected async loadAllContent(): Promise<void> {
-    // 必要に応じて無限スクロールやLoad Moreボタンの処理
+    await this.page?.waitForSelector('セレクタ', { state: 'attached', timeout: 30000 });
+    // 必要に応じてLoad Moreボタン処理
   }
 
   async scrape(): Promise<ServiceData[]> {
     if (!this.page) throw new Error("Page not initialized");
-
     return await this.page.evaluate(() => {
       const elements = document.querySelectorAll('セレクタ');
       return Array.from(elements).map(ele => ({
-        title: ele.querySelector('タイトルセレクタ')?.textContent?.trim() || '',
+        title: ele.querySelector('タイトル')?.textContent?.trim() || '',
         link: (ele as HTMLAnchorElement).href || '',
-        description: ele.querySelector('説明セレクタ')?.textContent?.trim() || '',
+        description: '',
         tag: '',
         icon: ele.querySelector('img')?.src || '',
       })).filter(item => item.title);
@@ -48,11 +44,7 @@ export class NewPlatformScraper extends BaseScraper {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const scraper = new NewPlatformScraper();
-  scraper.run().then((result) => {
-    console.log(`Scrape completed: ${result.services.length} services`);
-    if (result.error) process.exit(1);
-  });
+  new NewPlatformScraper().run();
 }
 ```
 
@@ -64,34 +56,22 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 ### 4. `public/index.html` - PLATFORMS配列とplatformConfig
 ```javascript
 const PLATFORMS = ['zapier', ..., 'newplatform'];
-
-const platformConfig = {
-  // ...
-  newplatform: { icon: '🆕', name: 'NewPlatform' },
-};
+const platformConfig = { newplatform: { icon: '🆕', name: 'NewPlatform' } };
 ```
 
 ### 5. `.github/workflows/scrape.yml` - ワークフローオプション
 ```yaml
 options:
-  - all
-  # ... 既存のプラットフォーム
   - newplatform
 ```
 
 ## 動作確認
 
-### スクレイパーのテスト（ヘッドレスモード無効）
 ```bash
 HEADLESS=false npm run scrape:newplatform
-```
-
-### 結果確認
-```bash
 sqlite3 public/services.db "SELECT COUNT(*) FROM raw_services WHERE platform = 'newplatform';"
 ```
 
 ## 注意事項
-- プラットフォーム数は `schema.sql` と `dbWorker.js` で動的に取得されるため更新不要
-- スクレイパー作成前に対象サイトの構造を確認すること
-- robots.txt を確認しスクレイピングが許可されているか確認
+- 対象サイトの構造とrobots.txtを事前確認
+- プラットフォーム数はスキーマで動的取得のため更新不要
