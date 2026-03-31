@@ -184,6 +184,60 @@ const NORMALIZATION_RULES = [
   { pattern: "zoominfo", normalized_name: "ZoomInfo", priority: 10 },
 ];
 
+// 検索エイリアスの定義
+// canonical_name: 正規化後の表示名（normalized_servicesのtitleと一致）
+// alias: 検索時に使用される別名
+// 注: 正規化ルール（NORMALIZATION_RULES）のpatternも自動的に検索エイリアスとして機能する
+//     ここには正規化ルールにない追加のエイリアス（カタカナ、英語表記ゆれ等）を定義
+const SEARCH_ALIASES = [
+  // Google Sheets（英語表記ゆれ）
+  { canonical_name: "Google Sheets", alias: "Google Spreadsheet" },
+  { canonical_name: "Google Sheets", alias: "Google Spreadsheets" },
+  { canonical_name: "Google Sheets", alias: "スプレッドシート" },
+
+  // Google系（カタカナ）
+  { canonical_name: "Google Drive", alias: "グーグルドライブ" },
+  { canonical_name: "Google Calendar", alias: "グーグルカレンダー" },
+  { canonical_name: "Google Docs", alias: "グーグルドキュメント" },
+  { canonical_name: "Google Forms", alias: "グーグルフォーム" },
+
+  // Microsoft Teams（カタカナ）
+  { canonical_name: "Microsoft Teams", alias: "チームズ" },
+
+  // Slack（カタカナ）
+  { canonical_name: "Slack", alias: "スラック" },
+
+  // ChatGPT（カタカナ）
+  { canonical_name: "ChatGPT", alias: "チャットGPT" },
+  { canonical_name: "ChatGPT", alias: "チャットジーピーティー" },
+
+  // X/Twitter（カタカナ）
+  { canonical_name: "X (formerly Twitter)", alias: "ツイッター" },
+  { canonical_name: "X (formerly Twitter)", alias: "エックス" },
+
+  // LINE（カタカナ）
+  { canonical_name: "LINE", alias: "ライン" },
+  { canonical_name: "LINE Official Account", alias: "LINE公式" },
+
+  // Notion（カタカナ）
+  { canonical_name: "Notion", alias: "ノーション" },
+
+  // kintone（カタカナ）
+  { canonical_name: "kintone", alias: "キントーン" },
+
+  // Discord（カタカナ）
+  { canonical_name: "Discord", alias: "ディスコード" },
+
+  // Zoom（カタカナ）
+  { canonical_name: "Zoom", alias: "ズーム" },
+
+  // Trello（カタカナ）
+  { canonical_name: "Trello", alias: "トレロ" },
+
+  // Asana（カタカナ）
+  { canonical_name: "Asana", alias: "アサナ" },
+];
+
 // 正規化ルールの初期データ投入（重複は自動的にスキップ）
 export function seedNormalizationRules(db: Database, reset = false): void {
   if (reset) {
@@ -207,6 +261,35 @@ export function seedNormalizationRules(db: Database, reset = false): void {
   console.log(`Seeded ${inserted} new normalization rules (${NORMALIZATION_RULES.length} total defined)`);
 }
 
+// 検索エイリアスをリセット（全削除）
+export function resetSearchAliases(db: Database): void {
+  db.run("DELETE FROM search_aliases");
+  console.log("Search aliases reset");
+}
+
+// 検索エイリアスの初期データ投入（重複は自動的にスキップ）
+export function seedSearchAliases(db: Database, reset = false): void {
+  if (reset) {
+    resetSearchAliases(db);
+  }
+
+  const stmt = db.prepare(`
+    INSERT OR IGNORE INTO search_aliases (canonical_name, alias)
+    VALUES (?, ?)
+  `);
+
+  let inserted = 0;
+  for (const aliasRule of SEARCH_ALIASES) {
+    stmt.run([aliasRule.canonical_name, aliasRule.alias]);
+    if (db.getRowsModified() > 0) {
+      inserted++;
+    }
+  }
+  stmt.free();
+
+  console.log(`Seeded ${inserted} new search aliases (${SEARCH_ALIASES.length} total defined)`);
+}
+
 // スクリプトとして実行された場合
 // 引数: --reset でルールをリセットしてから投入
 if (import.meta.url === `file://${process.argv[1]}`) {
@@ -214,6 +297,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   (async () => {
     const db = await initDatabase();
     seedNormalizationRules(db, reset);
+    seedSearchAliases(db, reset);
     saveDatabase(db);
     db.close();
   })();

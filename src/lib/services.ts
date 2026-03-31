@@ -22,6 +22,20 @@ export interface SearchParams {
   offset?: number;
 }
 
+// キーワードからエイリアス経由で正規名を取得
+// 正規化ルール（pattern→normalized_name）と検索エイリアス（alias→canonical_name）の両方を検索
+function getCanonicalNamesForKeyword(db: ReturnType<typeof getDb>, keyword: string): string[] {
+  const sql = `
+    SELECT DISTINCT name FROM (
+      SELECT normalized_name as name FROM normalization_rules WHERE pattern LIKE ?
+      UNION
+      SELECT canonical_name as name FROM search_aliases WHERE alias LIKE ?
+    )
+  `;
+  const results = db.prepare(sql).all(`%${keyword}%`, `%${keyword}%`) as { name: string }[];
+  return results.map((r) => r.name);
+}
+
 export function searchServices(params: SearchParams = {}): Service[] {
   const {
     query = "",
@@ -54,12 +68,27 @@ export function searchServices(params: SearchParams = {}): Service[] {
   if (query) {
     const keywords = query.split(" ").filter((k) => k);
     keywords.forEach((keyword) => {
+      // エイリアス経由で正規名を取得
+      const canonicalNames = getCanonicalNamesForKeyword(db, keyword);
+
       if (searchMode === "title-only") {
-        sql += ` AND title LIKE ?`;
-        sqlParams.push(`%${keyword}%`);
+        if (canonicalNames.length > 0) {
+          const placeholders = canonicalNames.map(() => "title = ?").join(" OR ");
+          sql += ` AND (title LIKE ? OR ${placeholders})`;
+          sqlParams.push(`%${keyword}%`, ...canonicalNames);
+        } else {
+          sql += ` AND title LIKE ?`;
+          sqlParams.push(`%${keyword}%`);
+        }
       } else {
-        sql += ` AND (title LIKE ? OR description LIKE ? OR tag LIKE ?)`;
-        sqlParams.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
+        if (canonicalNames.length > 0) {
+          const placeholders = canonicalNames.map(() => "title = ?").join(" OR ");
+          sql += ` AND (title LIKE ? OR description LIKE ? OR tag LIKE ? OR ${placeholders})`;
+          sqlParams.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`, ...canonicalNames);
+        } else {
+          sql += ` AND (title LIKE ? OR description LIKE ? OR tag LIKE ?)`;
+          sqlParams.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
+        }
       }
     });
   }
@@ -109,12 +138,27 @@ export function getCounts(params: SearchParams = {}): ApiCounts {
   if (query) {
     const keywords = query.split(" ").filter((k) => k);
     keywords.forEach((keyword) => {
+      // エイリアス経由で正規名を取得
+      const canonicalNames = getCanonicalNamesForKeyword(db, keyword);
+
       if (searchMode === "title-only") {
-        whereClause += ` AND title LIKE ?`;
-        sqlParams.push(`%${keyword}%`);
+        if (canonicalNames.length > 0) {
+          const placeholders = canonicalNames.map(() => "title = ?").join(" OR ");
+          whereClause += ` AND (title LIKE ? OR ${placeholders})`;
+          sqlParams.push(`%${keyword}%`, ...canonicalNames);
+        } else {
+          whereClause += ` AND title LIKE ?`;
+          sqlParams.push(`%${keyword}%`);
+        }
       } else {
-        whereClause += ` AND (title LIKE ? OR description LIKE ? OR tag LIKE ?)`;
-        sqlParams.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
+        if (canonicalNames.length > 0) {
+          const placeholders = canonicalNames.map(() => "title = ?").join(" OR ");
+          whereClause += ` AND (title LIKE ? OR description LIKE ? OR tag LIKE ? OR ${placeholders})`;
+          sqlParams.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`, ...canonicalNames);
+        } else {
+          whereClause += ` AND (title LIKE ? OR description LIKE ? OR tag LIKE ?)`;
+          sqlParams.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
+        }
       }
     });
   }

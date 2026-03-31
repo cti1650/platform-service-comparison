@@ -79,8 +79,18 @@ SELECT
 FROM normalized_services
 GROUP BY platform;
 
+-- 検索エイリアス（別名検索用）
+CREATE TABLE IF NOT EXISTS search_aliases (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  canonical_name TEXT NOT NULL,
+  alias TEXT NOT NULL UNIQUE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- インデックス
 CREATE INDEX IF NOT EXISTS idx_raw_services_platform ON raw_services(platform);
 CREATE INDEX IF NOT EXISTS idx_raw_services_title ON raw_services(title);
 CREATE INDEX IF NOT EXISTS idx_normalization_rules_pattern ON normalization_rules(pattern);
 CREATE INDEX IF NOT EXISTS idx_raw_services_platform_title ON raw_services(platform, title);
+CREATE INDEX IF NOT EXISTS idx_search_aliases_alias ON search_aliases(alias);
+CREATE INDEX IF NOT EXISTS idx_search_aliases_canonical ON search_aliases(canonical_name);
