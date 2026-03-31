@@ -33,14 +33,21 @@
 [スクレイピング]
 Playwright → SQLite (data/services.db)
 
-[フロントエンド]
-ブラウザ → Next.js API Routes → better-sqlite3 → SQLite
+[フロントエンド - 初回表示]
+Server Component (page.tsx) → services.ts → better-sqlite3 → SQLite
+  ↓ props (initialServices, initialCounts, platforms)
+Client Component (ServiceSearch.tsx) → 即座に表示（ローディングなし）
+
+[フロントエンド - フィルター変更時]
+Client Component → API Routes → better-sqlite3 → SQLite → JSON応答
 ```
 
 - データは`data/services.db`で一元管理
 - サーバーサイドでbetter-sqlite3を使ってSQLiteをクエリ
+- **初回表示**: Server Componentで直接データ取得し、propsでClient Componentへ渡す（高速表示）
+- **フィルター変更時**: API Routes経由でデータ取得
 - 正規化ルールはSQLite VIEWで適用
-- クライアントはAPI経由でJSONを取得
+- プラットフォーム一覧もDBから動的に取得（ハードコードなし）
 
 ## デプロイ
 
@@ -91,7 +98,7 @@ platform-service-comparison/
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx      # ルートレイアウト
-│   │   ├── page.tsx        # メインページ
+│   │   ├── page.tsx        # メインページ（Server Component）
 │   │   ├── globals.css     # グローバルスタイル
 │   │   └── api/
 │   │       ├── search/route.ts     # 検索API
@@ -103,10 +110,14 @@ platform-service-comparison/
 │   │   ├── CategoryFilter.tsx
 │   │   ├── PlatformFilter.tsx
 │   │   ├── ServiceCard.tsx
+│   │   ├── ServiceSearch.tsx       # メイン検索UI（Client Component）
 │   │   ├── ScrollTopButton.tsx
 │   │   └── NoResults.tsx
-│   └── lib/
-│       └── db.ts           # SQLite接続
+│   ├── lib/
+│   │   ├── db.ts           # SQLite接続
+│   │   └── services.ts     # 検索・カウント・プラットフォーム取得関数
+│   └── types/
+│       └── index.ts        # 共通型定義
 ├── data/
 │   └── services.db         # SQLiteデータベース
 ├── scripts/

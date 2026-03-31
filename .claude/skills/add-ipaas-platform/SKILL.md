@@ -7,7 +7,7 @@ description: |
 
 # 新規iPaaSプラットフォーム追加
 
-## 更新が必要なファイル（5箇所）
+## 更新が必要なファイル（4箇所）
 
 ### 1. `scripts/scrapers/types.ts` - 型定義
 ```typescript
@@ -53,25 +53,24 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 "scrape:newplatform": "npx tsx scripts/scrapers/newplatform.ts"
 ```
 
-### 4. `public/index.html` - PLATFORMS配列とplatformConfig
-```javascript
-const PLATFORMS = ['zapier', ..., 'newplatform'];
-const platformConfig = { newplatform: { icon: '🆕', name: 'NewPlatform' } };
-```
-
-### 5. `.github/workflows/scrape.yml` - ワークフローオプション
+### 4. `.github/workflows/scrape.yml` - ワークフローオプション
 ```yaml
 options:
   - newplatform
 ```
 
+## 更新不要なファイル
+
+- **フロントエンド**: プラットフォーム一覧は`getPlatforms()`でDBから動的取得されるため、コード変更不要
+- **プラットフォーム数**: スキーマで動的取得のため更新不要
+
 ## 動作確認
 
 ```bash
 HEADLESS=false npm run scrape:newplatform
-sqlite3 public/services.db "SELECT COUNT(*) FROM raw_services WHERE platform = 'newplatform';"
+sqlite3 data/services.db "SELECT COUNT(*) FROM raw_services WHERE platform = 'newplatform';"
 ```
 
 ## 注意事項
 - 対象サイトの構造とrobots.txtを事前確認
-- プラットフォーム数はスキーマで動的取得のため更新不要
+- スクレイピング後、`npm run dev`で新プラットフォームが自動的にフィルターに表示される

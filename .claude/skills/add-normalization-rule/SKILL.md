@@ -11,8 +11,8 @@ description: |
 
 ### 1. 現在のルールと対象サービスを確認
 ```bash
-sqlite3 public/services.db "SELECT pattern, normalized_name FROM normalization_rules ORDER BY normalized_name;"
-sqlite3 public/services.db "SELECT platform, title FROM raw_services WHERE title LIKE '%検索キーワード%';"
+sqlite3 data/services.db "SELECT pattern, normalized_name FROM normalization_rules ORDER BY normalized_name;"
+sqlite3 data/services.db "SELECT platform, title FROM raw_services WHERE title LIKE '%検索キーワード%';"
 ```
 
 ### 2. `scripts/db/init.ts` の `NORMALIZATION_RULES` 配列に追加
@@ -25,7 +25,7 @@ sqlite3 public/services.db "SELECT platform, title FROM raw_services WHERE title
 ### 3. ルール適用と確認
 ```bash
 npm run db:init
-sqlite3 public/services.db "SELECT title, original_title, platform FROM normalized_services WHERE original_title LIKE '%検索キーワード%';"
+sqlite3 data/services.db "SELECT title, original_title, platform FROM normalized_services WHERE original_title LIKE '%検索キーワード%';"
 ```
 
 ## 注意事項
