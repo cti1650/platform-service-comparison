@@ -2,11 +2,11 @@
   "name": "platform-service-comparison",
   "version": "1.0.0",
   "description": "Platform service comparison tool",
-  "main": "index.js",
+  "private": true,
   "scripts": {
-    "dev": "vercel dev",
-    "build": "echo 'Static site - no build needed'",
-    "start": "vercel --prod",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "scrape": "npx tsx scripts/scrape-all.ts",
     "scrape:zapier": "npx tsx scripts/scrapers/zapier.ts",
     "scrape:ifttt": "npx tsx scripts/scrapers/ifttt.ts",
@@ -18,22 +18,22 @@
     "scrape:anyflow": "npx tsx scripts/scrapers/anyflow.ts",
     "db:init": "npx tsx scripts/db/init.ts"
   },
-  "keywords": [
-    "platform",
-    "service",
-    "comparison",
-    "react",
-    "static"
-  ],
-  "author": "",
-  "license": "MIT",
+  "dependencies": {
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "better-sqlite3": "^11.0.0"
+  },
   "devDependencies": {
-    "vercel": "^34.0.0",
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "typescript": "^5.4.0",
     "tsx": "^4.7.0",
     "playwright": "^1.42.0",
     "sql.js": "^1.10.0",
-    "@types/sql.js": "^1.4.9",
-    "@types/node": "^20.11.0"
+    "@tailwindcss/postcss": "^4.0.0",
+    "tailwindcss": "^4.0.0"
   }
 }

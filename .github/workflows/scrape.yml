@@ -67,12 +67,12 @@ jobs:
           git config --local user.name "github-actions[bot]"
 
           # SQLiteの件数を取得
-          TOTAL=$(sqlite3 public/services.db "SELECT COUNT(*) FROM raw_services")
-          NORMALIZED=$(sqlite3 public/services.db "SELECT COUNT(DISTINCT title) FROM normalized_services")
+          TOTAL=$(sqlite3 data/services.db "SELECT COUNT(*) FROM raw_services")
+          NORMALIZED=$(sqlite3 data/services.db "SELECT COUNT(DISTINCT title) FROM normalized_services")
           echo "Total services: $TOTAL, Normalized: $NORMALIZED"
 
           # データベースをコミット
-          git add public/services.db
+          git add data/services.db
 
           # 変更がある場合のみコミット
           if git diff --staged --quiet; then
@@ -86,5 +86,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: scrape-results
-          path: public/services.db
+          path: data/services.db
           retention-days: 7

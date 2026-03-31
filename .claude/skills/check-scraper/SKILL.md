@@ -19,13 +19,13 @@ HEADLESS=false npm run scrape:[platform]
 ### 2. 結果確認
 ```bash
 # 件数確認
-sqlite3 public/services.db "SELECT platform, COUNT(*) FROM raw_services GROUP BY platform ORDER BY COUNT(*) DESC;"
+sqlite3 data/services.db "SELECT platform, COUNT(*) FROM raw_services GROUP BY platform ORDER BY COUNT(*) DESC;"
 
 # 履歴確認
-sqlite3 public/services.db "SELECT platform, service_count, status, scraped_at FROM scrape_history ORDER BY scraped_at DESC LIMIT 10;"
+sqlite3 data/services.db "SELECT platform, service_count, status, scraped_at FROM scrape_history ORDER BY scraped_at DESC LIMIT 10;"
 
 # エラー確認
-sqlite3 public/services.db "SELECT platform, error_message FROM scrape_history WHERE status = 'error' ORDER BY scraped_at DESC LIMIT 5;"
+sqlite3 data/services.db "SELECT platform, error_message FROM scrape_history WHERE status = 'error' ORDER BY scraped_at DESC LIMIT 5;"
 ```
 
 ## 全プラットフォーム一括テスト
