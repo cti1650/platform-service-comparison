@@ -16,6 +16,10 @@ dist/
 build/
 out/
 
+# Next.js
+.next/
+next-env.d.ts
+
 # Cache directories
 .cache/
 .parcel-cache/
@@ -60,5 +64,5 @@ tmp/
 temp/
 
 # SQLite WAL files (not needed in repo)
-public/services.db-wal
-public/services.db-shm
+data/services.db-wal
+data/services.db-shm

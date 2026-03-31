@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a static web application for comparing integration services and connectors across major iPaaS (Integration Platform as a Service) platforms: Zapier, IFTTT, Power Automate, n8n, Make, Yoom, Dify, and Anyflow. The app provides cross-platform search functionality and filtering capabilities to help users find and compare integration services across different iPaaS platforms.
+This is a Next.js web application for comparing integration services and connectors across major iPaaS (Integration Platform as a Service) platforms: Zapier, IFTTT, Power Automate, n8n, Make, Yoom, Dify, and Anyflow. The app provides cross-platform search functionality and filtering capabilities to help users find and compare integration services across different iPaaS platforms.
 
 ## Development Commands
 
@@ -14,6 +14,12 @@ npm install
 
 # Start development server
 npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm run start
 
 # Initialize database (apply schema, seed normalization rules)
 npm run db:init
@@ -34,27 +40,36 @@ npm run scrape:anyflow
 
 ## Architecture
 
+### Tech Stack
+- **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript
+- **UI**: React 19 + Tailwind CSS v4
+- **Database**: SQLite with better-sqlite3 (server-side)
+- **Scraping**: Playwright
+
 ### Data Flow
 ```
 [Scraping]
-Playwright → SQLite (public/services.db)
+Playwright → SQLite (data/services.db)
 
 [Frontend]
-Browser → sql.js (WASM) → Direct SQLite queries
+Browser → Next.js API Routes → better-sqlite3 → SQLite
 ```
 
 ### Frontend Structure
-- **Single Page Application**: Built with React (CDN version) + Babel for JSX transformation
-- **Styling**: Tailwind CSS (CDN) with custom CSS for glass effects and animations
-- **Database**: sql.js (WASM) for querying SQLite directly in browser
-- **Web Worker**: `public/js/dbWorker.js` handles database operations asynchronously
+- **Framework**: Next.js 15 with App Router
+- **Styling**: Tailwind CSS v4 with custom CSS for glass effects
+- **Database**: better-sqlite3 for server-side SQLite queries
+- **API Routes**: Server-side endpoints for search, counts, platforms
 
-### Key Components
+### Key Components (src/components/)
+- **Header**: Application header with title
 - **SearchBar**: Debounced search with mode toggle (title-only / full-text)
 - **CategoryFilter**: Filters by platform coverage (all/multiple/unique)
 - **PlatformFilter**: Filters by specific platform (sorted by service count)
 - **ServiceCard**: Expandable cards showing service details across platforms
 - **ScrollTopButton**: Smooth scroll to top functionality
+- **NoResults**: Empty state display
 
 ### Database Schema
 
@@ -79,43 +94,62 @@ Browser → sql.js (WASM) → Direct SQLite queries
 7. **Dify** - AI-powered automation and integration platform
 8. **Anyflow** - Japanese enterprise iPaaS platform
 
+### API Routes (src/app/api/)
+- **GET /api/search**: Search services with filters (query, platform, category, searchMode, limit, offset)
+- **GET /api/counts**: Category and platform counts for filters
+- **GET /api/platforms**: Platform list with service counts
+
 ### Search Algorithm
-- Uses Web Workers for non-blocking database operations
-- sql.js queries SQLite database directly in browser
+- Server-side SQLite queries via better-sqlite3
 - Supports multi-keyword search with AND logic
 - Filters by: category (platform coverage), platform, and search terms
-- Implements debounced search (300ms) for performance
+- Client-side debounced search (300ms) for performance
 - Results limited to 2000 for display, counts calculated from full dataset
 
 ## Deployment
 
-- **Platform**: Vercel with static site hosting
-- **Configuration**: `vercel.json` handles routing and security headers
-- **Domain**: All routes redirect to `index.html` for SPA behavior
+- **Platform**: Vercel with Next.js hosting
+- **Build**: `next build` generates optimized production build
 - **CI/CD**: GitHub Actions runs weekly scraping and commits updated database
 
 ## File Structure
 
 ```
-public/
-├── index.html          # Main application file
-├── services.db         # SQLite database (scraped data)
-└── js/
-    ├── ga.js           # Google Analytics setup
-    └── dbWorker.js     # sql.js Web Worker
+src/
+├── app/
+│   ├── layout.tsx          # Root layout
+│   ├── page.tsx            # Main search page
+│   ├── globals.css         # Tailwind + custom styles
+│   └── api/
+│       ├── search/route.ts     # Search API
+│       ├── counts/route.ts     # Counts API
+│       └── platforms/route.ts  # Platforms API
+├── components/             # React components
+│   ├── Header.tsx
+│   ├── SearchBar.tsx
+│   ├── CategoryFilter.tsx
+│   ├── PlatformFilter.tsx
+│   ├── ServiceCard.tsx
+│   ├── ScrollTopButton.tsx
+│   └── NoResults.tsx
+└── lib/
+    └── db.ts               # SQLite connection
+
+data/
+└── services.db             # SQLite database (scraped data)
 
 scripts/
 ├── db/
-│   ├── init.ts         # Database initialization & normalization rules
-│   └── schema.sql      # Table and VIEW definitions
+│   ├── init.ts             # Database initialization & normalization rules
+│   └── schema.sql          # Table and VIEW definitions
 └── scrapers/
-    ├── base.ts         # Base scraper class
-    ├── types.ts        # TypeScript types
-    └── [platform].ts   # Platform-specific scrapers
+    ├── base.ts             # Base scraper class
+    ├── types.ts            # TypeScript types
+    └── [platform].ts       # Platform-specific scrapers
 
 .github/
 └── workflows/
-    └── scrape.yml      # Weekly scraping workflow
+    └── scrape.yml          # Weekly scraping workflow
 ```
 
 ## Key Features
@@ -129,7 +163,7 @@ scripts/
 4. **Service Details**: Expandable cards showing platform-specific connector information
 5. **Direct Links**: Direct links to each platform's connector/service pages
 6. **Search Modes**: Title-only search vs full-text search
-7. **Performance**: sql.js Web Worker, debounced input, 2000 result limit for display
+7. **Performance**: Server-side SQLite, debounced input, 2000 result limit for display
 8. **Service Name Normalization**: SQLite VIEW applies normalization rules from database
 
 ## Service Name Normalization

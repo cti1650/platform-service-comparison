@@ -19,12 +19,11 @@
 
 ## 技術スタック
 
-- React (CDN版)
-- Tailwind CSS (CDN版)
-- Font Awesome
-- sql.js (ブラウザ上でSQLiteを直接クエリ)
-- Web Workers (DB操作の非同期処理)
-- SQLite (データ管理)
+- Next.js 15 (App Router)
+- React 19
+- TypeScript
+- Tailwind CSS v4
+- better-sqlite3 (サーバーサイドSQLite)
 - Playwright (スクレイピング)
 - Google Analytics
 
@@ -32,25 +31,26 @@
 
 ```
 [スクレイピング]
-Playwright → SQLite (public/services.db)
+Playwright → SQLite (data/services.db)
 
 [フロントエンド]
-ブラウザ → sql.js (WASM) → SQLiteを直接クエリ
+ブラウザ → Next.js API Routes → better-sqlite3 → SQLite
 ```
 
-- データは`public/services.db`で一元管理
-- ブラウザ上でsql.jsを使ってSQLiteを直接クエリ
+- データは`data/services.db`で一元管理
+- サーバーサイドでbetter-sqlite3を使ってSQLiteをクエリ
 - 正規化ルールはSQLite VIEWで適用
+- クライアントはAPI経由でJSONを取得
 
 ## デプロイ
 
-このプロジェクトはVercelでの静的サイトホスティングに対応しています。
+このプロジェクトはVercelでのNext.jsホスティングに対応しています。
 
 ### Vercelでのデプロイ手順
 
 1. このリポジトリをGitHubにプッシュ
 2. Vercelアカウントでプロジェクトをインポート
-3. 自動的にデプロイが開始されます
+3. 自動的にビルド・デプロイが開始されます
 
 ## ローカル開発
 
@@ -60,6 +60,12 @@ npm install
 
 # 開発サーバーの起動
 npm run dev
+
+# 本番ビルド
+npm run build
+
+# 本番サーバーの起動
+npm run start
 
 # データベース初期化（スキーマ適用・正規化ルール投入）
 npm run db:init
@@ -82,12 +88,27 @@ npm run scrape:anyflow
 
 ```
 platform-service-comparison/
-├── public/
-│   ├── index.html          # メインHTMLファイル
-│   ├── services.db         # SQLiteデータベース
-│   └── js/
-│       ├── ga.js           # Google Analytics設定
-│       └── dbWorker.js     # sql.js Web Worker
+├── src/
+│   ├── app/
+│   │   ├── layout.tsx      # ルートレイアウト
+│   │   ├── page.tsx        # メインページ
+│   │   ├── globals.css     # グローバルスタイル
+│   │   └── api/
+│   │       ├── search/route.ts     # 検索API
+│   │       ├── counts/route.ts     # 件数API
+│   │       └── platforms/route.ts  # プラットフォーム一覧API
+│   ├── components/
+│   │   ├── Header.tsx
+│   │   ├── SearchBar.tsx
+│   │   ├── CategoryFilter.tsx
+│   │   ├── PlatformFilter.tsx
+│   │   ├── ServiceCard.tsx
+│   │   ├── ScrollTopButton.tsx
+│   │   └── NoResults.tsx
+│   └── lib/
+│       └── db.ts           # SQLite接続
+├── data/
+│   └── services.db         # SQLiteデータベース
 ├── scripts/
 │   ├── db/
 │   │   ├── init.ts         # DB初期化・正規化ルール投入
@@ -96,8 +117,10 @@ platform-service-comparison/
 ├── .github/
 │   └── workflows/
 │       └── scrape.yml      # 週次スクレイピング
+├── next.config.ts
+├── tsconfig.json
+├── postcss.config.mjs
 ├── package.json
-├── vercel.json
 └── README.md
 ```
 
@@ -114,8 +137,27 @@ platform-service-comparison/
 - `category_counts` - カテゴリ別件数
 - `platform_counts` - プラットフォーム別件数
 
+## API エンドポイント
+
+### GET /api/search
+検索条件に基づいてサービス一覧を取得
+
+**パラメータ:**
+- `query` - 検索キーワード
+- `platform` - プラットフォームフィルター (all, zapier, ifttt, etc.)
+- `category` - カテゴリーフィルター (view-all, all, multiple, unique)
+- `searchMode` - 検索モード (all, title-only)
+- `limit` - 取得件数
+- `offset` - オフセット
+
+### GET /api/counts
+カテゴリー・プラットフォーム別の件数を取得
+
+### GET /api/platforms
+プラットフォーム一覧と件数を取得
+
 ## カスタマイズ
 
 - 正規化ルールは `scripts/db/init.ts` の `NORMALIZATION_RULES` で管理
-- Google Analytics IDは `public/js/ga.js` で変更可能
-- スタイルはTailwind CSSクラスで調整可能
+- スタイルは `src/app/globals.css` とTailwind CSSクラスで調整可能
+- コンポーネントは `src/components/` 配下で管理

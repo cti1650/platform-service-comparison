@@ -5,7 +5,7 @@ import { getDatabase, saveDatabase } from "../db/init.js";
 import type { ServiceData, PlatformName, ScrapeResult } from "./types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DB_PATH = join(__dirname, "../../public/services.db");
+const DB_PATH = join(__dirname, "../../data/services.db");
 
 export abstract class BaseScraper {
   protected browser: Browser | null = null;
