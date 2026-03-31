@@ -10,17 +10,6 @@ import { ScrollTopButton } from "@/components/ScrollTopButton";
 import { NoResults } from "@/components/NoResults";
 import type { Service, ApiCounts, ProcessedCounts } from "@/types";
 
-const PLATFORMS = [
-  "zapier",
-  "ifttt",
-  "powerAutomate",
-  "n8n",
-  "make",
-  "yoom",
-  "dify",
-  "anyflow",
-];
-
 function processCountsData(countsData: ApiCounts): ProcessedCounts {
   const platformsMap: Record<string, number> = {};
   countsData.platforms.forEach((p) => {
@@ -49,11 +38,13 @@ function useDebounce<T>(value: T, delay: number): T {
 interface ServiceSearchProps {
   initialServices: Service[];
   initialCounts: ApiCounts;
+  platforms: string[];
 }
 
 export function ServiceSearch({
   initialServices,
   initialCounts,
+  platforms,
 }: ServiceSearchProps) {
   const [selectedCategory, setSelectedCategory] = useState("view-all");
   const [selectedPlatform, setSelectedPlatform] = useState("all");
@@ -158,7 +149,7 @@ export function ServiceSearch({
             selectedPlatform={selectedPlatform}
             setSelectedPlatform={setSelectedPlatform}
             counts={counts}
-            platforms={PLATFORMS}
+            platforms={platforms}
           />
         </div>
 

@@ -1,5 +1,5 @@
 import { ServiceSearch } from "@/components/ServiceSearch";
-import { searchServices, getCounts } from "@/lib/services";
+import { searchServices, getCounts, getPlatforms } from "@/lib/services";
 
 export default function Home() {
   // サーバーサイドで初期データを取得
@@ -18,10 +18,13 @@ export default function Home() {
     searchMode: "all",
   });
 
+  const platforms = getPlatforms();
+
   return (
     <ServiceSearch
       initialServices={initialServices}
       initialCounts={initialCounts}
+      platforms={platforms}
     />
   );
 }

@@ -91,6 +91,13 @@ export function searchServices(params: SearchParams = {}): Service[] {
   }));
 }
 
+export function getPlatforms(): string[] {
+  const db = getDb();
+  const sql = `SELECT DISTINCT platform FROM normalized_services ORDER BY platform`;
+  const results = db.prepare(sql).all() as { platform: string }[];
+  return results.map((r) => r.platform);
+}
+
 export function getCounts(params: SearchParams = {}): ApiCounts {
   const { query = "", platform = "all", searchMode = "full" } = params;
 

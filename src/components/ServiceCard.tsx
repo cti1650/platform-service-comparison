@@ -1,22 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
-interface ServiceDetail {
-  original_title?: string;
-  title?: string;
-  link?: string;
-  description?: string;
-  tag?: string;
-  icon?: string;
-}
-
-interface Service {
-  title: string;
-  platforms: string[];
-  platform_count: number;
-  details: Record<string, ServiceDetail>;
-}
+import type { Service } from "@/types";
 
 interface ServiceCardProps {
   service: Service;
