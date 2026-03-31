@@ -1,12 +1,11 @@
 "use client";
 
+import type { ProcessedCounts } from "@/types";
+
 interface PlatformFilterProps {
   selectedPlatform: string;
   setSelectedPlatform: (platform: string) => void;
-  counts: {
-    platforms: Record<string, number>;
-    totalUniqueServices?: number;
-  };
+  counts: ProcessedCounts;
   platforms: string[];
 }
 

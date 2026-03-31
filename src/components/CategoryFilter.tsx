@@ -1,17 +1,11 @@
 "use client";
 
-interface Counts {
-  "view-all": number;
-  all: number;
-  multiple: number;
-  unique: number;
-  [key: string]: number;
-}
+import type { ProcessedCounts } from "@/types";
 
 interface CategoryFilterProps {
   selectedCategory: string;
   setSelectedCategory: (category: string) => void;
-  counts: Counts;
+  counts: ProcessedCounts;
 }
 
 export function CategoryFilter({
@@ -64,7 +58,9 @@ export function CategoryFilter({
           >
             <span>{cat.icon}</span>
             <span className="hidden sm:inline">{cat.label}</span>
-            <span className="count">{counts[cat.key] || 0}</span>
+            <span className="count">
+              {counts[cat.key as keyof ProcessedCounts] as number || 0}
+            </span>
           </button>
         ))}
       </div>
