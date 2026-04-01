@@ -59,10 +59,35 @@ Client Component → API Routes → SQLite → JSON
 ### 追加方法
 `scripts/db/init.ts`の`SEARCH_ALIASES`配列に追加して`npm run db:init`を実行
 
+## MCP Server
+
+AIツール（Claude Desktop等）からサービス検索できるMCPサーバーを提供。
+
+### エンドポイント
+- 開発: `http://localhost:3000/mcp/mcp`
+- 本番: `https://<domain>/mcp/mcp`
+
+### 利用可能なツール
+
+| ツール名 | 説明 |
+|---------|------|
+| `search_services` | サービス名で検索（エイリアス対応） |
+| `find_platforms_for_services` | 複数サービス全対応のプラットフォームを検索 |
+| `get_platforms` | プラットフォーム一覧と対応サービス数 |
+| `get_service_detail` | サービス詳細（各プラットフォームのリンク等） |
+
+### 使用例
+```
+「SlackとGoogle SheetsとNotionを連携したい」
+→ find_platforms_for_services(["Slack", "Google Sheets", "Notion"])
+→ 6つのプラットフォーム対応: zapier, make, n8n, ifttt, yoom, anyflow
+```
+
 ## Skills
 
 以下のスキルが利用可能。詳細手順は各SKILL.mdを参照:
 
 - **add-ipaas-platform**: 新規iPaaSプラットフォーム追加
-- **add-normalization-rule**: サービス名正規化ルール追加
+- **add-normalization-rule**: サービス名正規化ルール・検索エイリアス追加
 - **check-scraper**: スクレイパー動作確認
+- **mcp-server**: MCPサーバーの使用方法とツール追加

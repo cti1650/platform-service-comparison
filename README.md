@@ -15,6 +15,8 @@
 - **直接リンク機能**（各プラットフォームのサービスページへ）
 - **検索モード切替**（タイトルのみ検索 / 全体検索）
 - **サービス名正規化**（プラットフォーム間の表記揺れをSQLiteで統一）
+- **検索エイリアス**（「Googleスプレッドシート」→「Google Sheets」等の別名検索対応）
+- **MCPサーバー**（AIツールからのサービス検索に対応）
 - **レスポンシブデザイン**
 
 ## 技術スタック
@@ -100,10 +102,12 @@ platform-service-comparison/
 │   │   ├── layout.tsx      # ルートレイアウト
 │   │   ├── page.tsx        # メインページ（Server Component）
 │   │   ├── globals.css     # グローバルスタイル
-│   │   └── api/
-│   │       ├── search/route.ts     # 検索API
-│   │       ├── counts/route.ts     # 件数API
-│   │       └── platforms/route.ts  # プラットフォーム一覧API
+│   │   ├── api/
+│   │   │   ├── search/route.ts     # 検索API
+│   │   │   ├── counts/route.ts     # 件数API
+│   │   │   └── platforms/route.ts  # プラットフォーム一覧API
+│   │   └── mcp/
+│   │       └── [transport]/route.ts  # MCPサーバー
 │   ├── components/
 │   │   ├── Header.tsx
 │   │   ├── SearchBar.tsx
@@ -140,6 +144,7 @@ platform-service-comparison/
 ### テーブル
 - `raw_services` - スクレイピング結果（生データ）
 - `normalization_rules` - サービス名正規化ルール
+- `search_aliases` - 検索エイリアス（別名検索用）
 - `scrape_history` - スクレイピング履歴
 
 ### VIEW
@@ -167,8 +172,52 @@ platform-service-comparison/
 ### GET /api/platforms
 プラットフォーム一覧と件数を取得
 
+## MCP サーバー
+
+AIツール（Claude Desktop等）からサービス検索できるMCPサーバーを提供しています。
+
+### エンドポイント
+- 開発: `http://localhost:3000/mcp/mcp`
+- 本番: `https://<domain>/mcp/mcp`
+
+### 利用可能なツール
+
+| ツール名 | 説明 |
+|---------|------|
+| `search_services` | サービス名で検索（エイリアス対応） |
+| `find_platforms_for_services` | 複数サービス全対応のプラットフォームを検索 |
+| `get_platforms` | プラットフォーム一覧と対応サービス数 |
+| `get_service_detail` | サービス詳細（各プラットフォームのリンク等） |
+
+### 使用例
+
+```
+「SlackとGoogle SheetsとNotionを連携したい」
+→ find_platforms_for_services(["Slack", "Google Sheets", "Notion"])
+→ 結果: 6つのプラットフォーム対応（zapier, make, n8n, ifttt, yoom, anyflow）
+```
+
+カタカナ検索にも対応:
+```
+find_platforms_for_services(["スラック", "スプレッドシート", "ノーション"])
+→ 自動的に正規名に変換されて検索
+```
+
+### Claude Desktopでの設定例
+
+```json
+{
+  "mcpServers": {
+    "ipaas-comparison": {
+      "url": "http://localhost:3000/mcp/mcp"
+    }
+  }
+}
+```
+
 ## カスタマイズ
 
 - 正規化ルールは `scripts/db/init.ts` の `NORMALIZATION_RULES` で管理
+- 検索エイリアスは `scripts/db/init.ts` の `SEARCH_ALIASES` で管理
 - スタイルは `src/app/globals.css` とTailwind CSSクラスで調整可能
 - コンポーネントは `src/components/` 配下で管理
