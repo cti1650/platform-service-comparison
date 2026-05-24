@@ -20,6 +20,9 @@ out/
 .next/
 next-env.d.ts
 
+# TypeScript build cache
+*.tsbuildinfo
+
 # Cache directories
 .cache/
 .parcel-cache/

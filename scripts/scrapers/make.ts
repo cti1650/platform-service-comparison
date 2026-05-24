@@ -8,12 +8,17 @@ export class MakeScraper extends BaseScraper {
   protected async loadAllContent(): Promise<void> {
     if (!this.page) return;
 
+    // Cookie同意バナーが出ていれば閉じる（あれば押す、なければ無視）
+    await this.dismissCookieBanner();
+
     console.log('[make] Waiting for app cards to load...');
-    await this.page.waitForSelector('a[href*="/integrations/"]', { state: 'attached', timeout: 30000 });
+    await this.page.waitForSelector('a[href*="/integrations/"]', { state: 'attached', timeout: 60000 });
 
     // Load Moreボタンの出現を待つ
     console.log('[make] Waiting for Load More button...');
-    await this.page.waitForSelector("[data-cy='load-more']", { state: 'attached', timeout: 30000 });
+    await this.page.waitForSelector("[data-cy='load-more']", { state: 'attached', timeout: 30000 }).catch(() => {
+      console.log('[make] Load More button not found within timeout (may not be required)');
+    });
 
     // Load Moreボタンをクリックし続ける
     let previousCount = 0;
@@ -30,7 +35,11 @@ export class MakeScraper extends BaseScraper {
         document.querySelectorAll('a[href*="/integrations/"]').length
       );
 
-      await button.click();
+      // 固定ヘッダー等によるinterceptを避けるため、中央にスクロールしてJS経由でクリック
+      await button.evaluate((el) => {
+        el.scrollIntoView({ block: 'center', behavior: 'instant' as ScrollBehavior });
+        (el as HTMLElement).click();
+      });
 
       // 新しいコンテンツが読み込まれるまで待機
       await this.page.waitForFunction(
@@ -56,6 +65,28 @@ export class MakeScraper extends BaseScraper {
     }
 
     console.log(`[make] Finished loading, total: ${previousCount} items`);
+  }
+
+  private async dismissCookieBanner(): Promise<void> {
+    if (!this.page) return;
+
+    const candidates = [
+      'button#onetrust-accept-btn-handler',
+      'button:has-text("Accept All")',
+      'button:has-text("Accept all")',
+      'button:has-text("Allow all")',
+      'button:has-text("I agree")',
+    ];
+
+    for (const selector of candidates) {
+      const btn = await this.page.$(selector).catch(() => null);
+      if (btn) {
+        await btn.click({ timeout: 5000 }).catch(() => {});
+        console.log(`[make] Dismissed cookie banner via ${selector}`);
+        await this.page.waitForTimeout(500);
+        return;
+      }
+    }
   }
 
   async scrape(): Promise<ServiceData[]> {

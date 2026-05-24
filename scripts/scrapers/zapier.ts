@@ -31,7 +31,12 @@ export class ZapierScraper extends BaseScraper {
       // Load Moreボタンがあればクリック
       const button = await this.page.$('button:has-text("Load more")');
       if (button) {
-        await button.click();
+        // 固定ヘッダー等によるpointer-events interceptを避けるため、
+        // ボタンをビューポート中央にスクロールしてからJS経由でクリック
+        await button.evaluate((el) => {
+          el.scrollIntoView({ block: 'center', behavior: 'instant' as ScrollBehavior });
+          (el as HTMLElement).click();
+        });
         console.log('[zapier] Clicked Load more button');
         // 新しいコンテンツが読み込まれるまで待機
         await this.page.waitForFunction(
