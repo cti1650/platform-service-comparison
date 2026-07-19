@@ -1,6 +1,4 @@
-import type { Browser, BrowserContext, Page } from "playwright";
-import { chromium } from "playwright-extra";
-import StealthPlugin from "puppeteer-extra-plugin-stealth";
+import { chromium, Browser, BrowserContext, Page } from "playwright";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { getDatabase, saveDatabase } from "../db/init.js";
@@ -8,14 +6,6 @@ import type { ServiceData, PlatformName, ScrapeResult } from "./types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DB_PATH = join(__dirname, "../../data/services.db");
-
-// puppeteer-extra-plugin-stealth を適用（navigator.webdriver偽装・WebGL/codec/UA整合など
-// 多数の自動化痕跡を包括的に隠蔽し、Cloudflare等のbot判定を回避しやすくする）
-chromium.use(StealthPlugin());
-
-// ヘッドレスChromeの "HeadlessChrome" 痕跡を含まない一般的なUA
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
 export abstract class BaseScraper {
   protected browser: Browser | null = null;
@@ -36,15 +26,13 @@ export abstract class BaseScraper {
       headless,
       channel,
       args: [
-        // navigator.webdriver 等の自動化フラグを無効化（Cloudflare等のbot判定対策）
-        '--disable-blink-features=AutomationControlled',
+        // CI(Linux)で実Chromeを動かすために必要
         '--no-sandbox',
         '--disable-dev-shm-usage',
       ],
     });
 
     this.context = await this.browser.newContext({
-      userAgent: USER_AGENT,
       viewport: { width: 1280, height: 800 },
       locale: 'en-US',
       timezoneId: 'America/New_York',
@@ -52,9 +40,6 @@ export abstract class BaseScraper {
         'Accept-Language': 'en-US,en;q=0.9',
       },
     });
-
-    // 追加のステルス痕跡隠蔽は puppeteer-extra-plugin-stealth が担当するため、
-    // ここでの手動 addInitScript は不要（二重定義による例外を避けるため削除）。
 
     this.page = await this.context.newPage();
   }
