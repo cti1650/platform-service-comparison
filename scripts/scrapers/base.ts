@@ -25,10 +25,16 @@ export abstract class BaseScraper {
   abstract readonly url: string;
 
   async init(): Promise<void> {
-    // 環境変数 HEADLESS=false でヘッドレスモードを無効化（CIではヘッドレス必須）
+    // 環境変数 HEADLESS=false でヘッドレスモードを無効化。
+    // CIでは xvfb 上でヘッド有り(HEADLESS=false)＋実Chrome を使うとCloudflareの
+    // managed challenge を突破しやすい（ヘッドレスchromiumは検知されやすいため）。
     const headless = process.env.HEADLESS !== 'false';
+    // BROWSER_CHANNEL=chrome で bundled Chromium ではなく実Google Chromeを使用。
+    // 未設定なら undefined となり従来通り bundled Chromium が使われる。
+    const channel = process.env.BROWSER_CHANNEL || undefined;
     this.browser = await chromium.launch({
       headless,
+      channel,
       args: [
         // navigator.webdriver 等の自動化フラグを無効化（Cloudflare等のbot判定対策）
         '--disable-blink-features=AutomationControlled',
@@ -67,7 +73,9 @@ export abstract class BaseScraper {
    * ステルス処理により多くの場合はJSチャレンジが自動で解決するため、
    * タイトルが通常に戻るのを一定時間ポーリングして待つ。
    */
-  protected async passCloudflareChallenge(timeoutMs = 30000): Promise<void> {
+  protected async passCloudflareChallenge(
+    timeoutMs = Number(process.env.CF_WAIT_MS) || 30000
+  ): Promise<void> {
     if (!this.page) return;
 
     const isChallenge = (title: string) =>
