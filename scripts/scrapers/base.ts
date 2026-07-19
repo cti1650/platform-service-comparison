@@ -1,4 +1,6 @@
-import { chromium, Browser, BrowserContext, Page } from "playwright";
+import type { Browser, BrowserContext, Page } from "playwright";
+import { chromium } from "playwright-extra";
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { getDatabase, saveDatabase } from "../db/init.js";
@@ -6,6 +8,10 @@ import type { ServiceData, PlatformName, ScrapeResult } from "./types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DB_PATH = join(__dirname, "../../data/services.db");
+
+// puppeteer-extra-plugin-stealth を適用（navigator.webdriver偽装・WebGL/codec/UA整合など
+// 多数の自動化痕跡を包括的に隠蔽し、Cloudflare等のbot判定を回避しやすくする）
+chromium.use(StealthPlugin());
 
 // ヘッドレスChromeの "HeadlessChrome" 痕跡を含まない一般的なUA
 const USER_AGENT =
@@ -41,24 +47,8 @@ export abstract class BaseScraper {
       },
     });
 
-    // ヘッドレス特有の痕跡を隠すステルス処理（Cloudflare等のbot判定対策）。
-    // ヘッドレスのまま検知されにくくするのが目的（HEADLESS=false はCIで使えないため）。
-    await this.context.addInitScript(() => {
-      Object.defineProperty(navigator, 'webdriver', { get: () => false });
-      if (!(window as unknown as { chrome?: unknown }).chrome) {
-        (window as unknown as { chrome: unknown }).chrome = { runtime: {} };
-      }
-      Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
-      Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
-      const permissions = window.navigator.permissions;
-      const originalQuery = permissions?.query?.bind(permissions);
-      if (originalQuery) {
-        permissions.query = (parameters: PermissionDescriptor) =>
-          parameters.name === ('notifications' as PermissionName)
-            ? Promise.resolve({ state: Notification.permission } as PermissionStatus)
-            : originalQuery(parameters);
-      }
-    });
+    // 追加のステルス痕跡隠蔽は puppeteer-extra-plugin-stealth が担当するため、
+    // ここでの手動 addInitScript は不要（二重定義による例外を避けるため削除）。
 
     this.page = await this.context.newPage();
   }
