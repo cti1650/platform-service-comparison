@@ -1,4 +1,4 @@
-import { chromium, Browser, Page } from "playwright";
+import { chromium, Browser, BrowserContext, Page } from "playwright";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { getDatabase, saveDatabase } from "../db/init.js";
@@ -7,30 +7,100 @@ import type { ServiceData, PlatformName, ScrapeResult } from "./types.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DB_PATH = join(__dirname, "../../data/services.db");
 
+// ヘッドレスChromeの "HeadlessChrome" 痕跡を含まない一般的なUA
+const USER_AGENT =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+
 export abstract class BaseScraper {
   protected browser: Browser | null = null;
+  protected context: BrowserContext | null = null;
   protected page: Page | null = null;
   abstract readonly platform: PlatformName;
   abstract readonly url: string;
 
   async init(): Promise<void> {
-    // 環境変数 HEADLESS=false でヘッドレスモードを無効化
+    // 環境変数 HEADLESS=false でヘッドレスモードを無効化（CIではヘッドレス必須）
     const headless = process.env.HEADLESS !== 'false';
     this.browser = await chromium.launch({
       headless,
+      args: [
+        // navigator.webdriver 等の自動化フラグを無効化（Cloudflare等のbot判定対策）
+        '--disable-blink-features=AutomationControlled',
+        '--no-sandbox',
+        '--disable-dev-shm-usage',
+      ],
     });
-    this.page = await this.browser.newPage({
-      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+
+    this.context = await this.browser.newContext({
+      userAgent: USER_AGENT,
+      viewport: { width: 1280, height: 800 },
+      locale: 'en-US',
+      timezoneId: 'America/New_York',
+      extraHTTPHeaders: {
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
     });
-    await this.page.setViewportSize({ width: 1280, height: 800 });
+
+    // ヘッドレス特有の痕跡を隠すステルス処理（Cloudflare等のbot判定対策）。
+    // ヘッドレスのまま検知されにくくするのが目的（HEADLESS=false はCIで使えないため）。
+    await this.context.addInitScript(() => {
+      Object.defineProperty(navigator, 'webdriver', { get: () => false });
+      if (!(window as unknown as { chrome?: unknown }).chrome) {
+        (window as unknown as { chrome: unknown }).chrome = { runtime: {} };
+      }
+      Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+      Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+      const permissions = window.navigator.permissions;
+      const originalQuery = permissions?.query?.bind(permissions);
+      if (originalQuery) {
+        permissions.query = (parameters: PermissionDescriptor) =>
+          parameters.name === ('notifications' as PermissionName)
+            ? Promise.resolve({ state: Notification.permission } as PermissionStatus)
+            : originalQuery(parameters);
+      }
+    });
+
+    this.page = await this.context.newPage();
   }
 
   async close(): Promise<void> {
     if (this.browser) {
       await this.browser.close();
       this.browser = null;
+      this.context = null;
       this.page = null;
     }
+  }
+
+  /**
+   * Cloudflareの "Just a moment..." チャレンジを通過するまで待機する。
+   * ステルス処理により多くの場合はJSチャレンジが自動で解決するため、
+   * タイトルが通常に戻るのを一定時間ポーリングして待つ。
+   */
+  protected async passCloudflareChallenge(timeoutMs = 30000): Promise<void> {
+    if (!this.page) return;
+
+    const isChallenge = (title: string) =>
+      /just a moment|checking your browser|attention required|verify you are (a )?human/i.test(title);
+
+    const start = Date.now();
+    let sawChallenge = false;
+
+    while (Date.now() - start < timeoutMs) {
+      const title = await this.page.title().catch(() => '');
+      if (!isChallenge(title)) {
+        if (sawChallenge) {
+          console.log(`[${this.platform}] Passed Cloudflare challenge`);
+        }
+        return;
+      }
+      sawChallenge = true;
+      await this.page.waitForTimeout(2000);
+    }
+
+    console.warn(
+      `[${this.platform}] Cloudflare challenge still present after ${timeoutMs}ms; continuing anyway`
+    );
   }
 
   abstract scrape(): Promise<ServiceData[]>;
@@ -52,6 +122,10 @@ export abstract class BaseScraper {
       console.log(`[${this.platform}] Navigating to ${this.url}`);
 
       await this.page!.goto(this.url, { waitUntil: "domcontentloaded", timeout: 60000 });
+
+      // Cloudflareチャレンジが出ていれば通過を待つ
+      await this.passCloudflareChallenge();
+
       console.log(`[${this.platform}] Page loaded, loading all content...`);
 
       await this.loadAllContent();
