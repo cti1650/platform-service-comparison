@@ -19,14 +19,14 @@ npm run build    # ビルド
 npm run scrape   # 全プラットフォームスクレイピング
 npm run db:init  # DB初期化・正規化ルール適用
 
-# makeをローカルで手動実行する場合（CloudflareのためヘッドレスNG）
+# makeをローカルで手動実行する場合（ヘッドレスだと読み込めない）
 # 実Google Chromeをヘッド有りで起動する必要がある
 HEADLESS=false BROWSER_CHANNEL=chrome npm run scrape:make
 ```
 
-> **Note:** makeはCloudflare (managed challenge) で保護されており、ヘッドレスの
-> bundled Chromiumでは弾かれる。CIは xvfb 上でヘッド有りの実Chromeを使って突破している
-> (`.github/workflows/scrape.yml`)。ローカルで回す時も上記のように実Chrome＋ヘッド有りで実行する。
+> **Note:** makeはヘッドレスの bundled Chromium だとページを読み込めない。CIは xvfb 上で
+> ヘッド有りの実Chromeを使って読み込んでいる (`.github/workflows/scrape.yml`)。
+> ローカルで回す時も上記のように実Chrome＋ヘッド有りで実行する。
 
 ## Architecture
 

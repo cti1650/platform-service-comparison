@@ -15,21 +15,14 @@ export abstract class BaseScraper {
   abstract readonly url: string;
 
   async init(): Promise<void> {
-    // 環境変数 HEADLESS=false でヘッドレスモードを無効化。
-    // CIでは xvfb 上でヘッド有り(HEADLESS=false)＋実Chrome を使うとCloudflareの
-    // managed challenge を突破しやすい（ヘッドレスchromiumは検知されやすいため）。
+    // 一部サイトはヘッドレスの bundled Chromium だとページが読み込めないため、
+    // CIは xvfb 上で HEADLESS=false + BROWSER_CHANNEL=chrome のヘッド有り実Chromeで動かす。
     const headless = process.env.HEADLESS !== 'false';
-    // BROWSER_CHANNEL=chrome で bundled Chromium ではなく実Google Chromeを使用。
-    // 未設定なら undefined となり従来通り bundled Chromium が使われる。
     const channel = process.env.BROWSER_CHANNEL || undefined;
     this.browser = await chromium.launch({
       headless,
       channel,
-      args: [
-        // CI(Linux)で実Chromeを動かすために必要
-        '--no-sandbox',
-        '--disable-dev-shm-usage',
-      ],
+      args: ['--no-sandbox', '--disable-dev-shm-usage'],
     });
 
     this.context = await this.browser.newContext({
@@ -53,36 +46,32 @@ export abstract class BaseScraper {
     }
   }
 
-  /**
-   * Cloudflareの "Just a moment..." チャレンジを通過するまで待機する。
-   * ステルス処理により多くの場合はJSチャレンジが自動で解決するため、
-   * タイトルが通常に戻るのを一定時間ポーリングして待つ。
-   */
-  protected async passCloudflareChallenge(
-    timeoutMs = Number(process.env.CF_WAIT_MS) || 30000
+  /** 中間ページ（インタースティシャル）が消えて本来のページになるまで待機する。 */
+  protected async waitForInterstitial(
+    timeoutMs = Number(process.env.INTERSTITIAL_WAIT_MS) || 30000
   ): Promise<void> {
     if (!this.page) return;
 
-    const isChallenge = (title: string) =>
+    const isInterstitial = (title: string) =>
       /just a moment|checking your browser|attention required|verify you are (a )?human/i.test(title);
 
     const start = Date.now();
-    let sawChallenge = false;
+    let sawInterstitial = false;
 
     while (Date.now() - start < timeoutMs) {
       const title = await this.page.title().catch(() => '');
-      if (!isChallenge(title)) {
-        if (sawChallenge) {
-          console.log(`[${this.platform}] Passed Cloudflare challenge`);
+      if (!isInterstitial(title)) {
+        if (sawInterstitial) {
+          console.log(`[${this.platform}] Interstitial cleared`);
         }
         return;
       }
-      sawChallenge = true;
+      sawInterstitial = true;
       await this.page.waitForTimeout(2000);
     }
 
     console.warn(
-      `[${this.platform}] Cloudflare challenge still present after ${timeoutMs}ms; continuing anyway`
+      `[${this.platform}] Interstitial still present after ${timeoutMs}ms; continuing anyway`
     );
   }
 
@@ -106,8 +95,8 @@ export abstract class BaseScraper {
 
       await this.page!.goto(this.url, { waitUntil: "domcontentloaded", timeout: 60000 });
 
-      // Cloudflareチャレンジが出ていれば通過を待つ
-      await this.passCloudflareChallenge();
+      // 中間ページが出ていれば消えるまで待つ
+      await this.waitForInterstitial();
 
       console.log(`[${this.platform}] Page loaded, loading all content...`);
 
